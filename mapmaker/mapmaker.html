@@ -154,12 +154,15 @@ var g_init = true;
 var g_lvl = 0;
 var g_tile = 1;
 var g_sel = new Array(-1,-1,-1)
+var g_sel_corner1 = new Array(-1,-1,-1)
+var g_sel_corner2 = new Array(-1,-1,-1)
 var g_selected_tile = 1;
 var g_active_tiles = 1;
 var g_bool_ignore_img_warn = true;
 var g_tile_type=0; //Floor editing
 //Static Globals
-var g_max_tiles = 254;
+var g_max_tiles = 32000;
+var g_max_levels = 16;
 // Initialisation : Arrays
 var g_map_data = 0
 
@@ -246,7 +249,7 @@ function scale_mapview() {
 	document.getElementById("mapview").style.height = ((g_width + g_height) * 80 + (g_levels * 24)) + "px";
 	document.getElementById("workarea").style.width = "100%";
 	document.getElementById("workarea").style.height = "100%";
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < g_max_levels; i++) {
 		eval('document.getElementById("lv_' + (i + 1) + '")').style.width = "100%";
 		eval('document.getElementById("lv_' + (i + 1) + '")').style.height = "100%";
 		eval('document.getElementById("floor_' + (i + 1) + '")').style.width = "100%";
@@ -263,27 +266,66 @@ function scale_mapview() {
 	g_sel[0] = -1;
 	g_sel[1] = -1;
 	g_sel[2] = -1;
+	g_sel_corner1[0] = -1;
+	g_sel_corner1[1] = -1;
+	g_sel_corner1[2] = -1;
+	g_sel_corner2[0] = -1;
+	g_sel_corner2[1] = -1;
+	g_sel_corner2[2] = -1;
 	init_map_data(g_levels, g_width * 10, g_height * 10);
 	document.getElementById("edit_all").style.width = "100%";
 	document.getElementById("edit_all").style.height = "100%";
 	build_workarea()
 	change_floor(0)
 	document.getElementById("updating").style.visibility = "hidden";
-	update_map();
+	//update_map();
 };
 function sel_tile(_lvl,_i,_j) {
+if(g_bool_square) {
+	if	(g_sel_corner1[0] == -1){
+		g_sel_corner1[0] = _lvl;
+		g_sel_corner1[1] = _i;
+		g_sel_corner1[2] = _j;
+	}else{
+		g_sel_corner2[0] = _lvl;
+		g_sel_corner2[1] = _i;
+		g_sel_corner2[2] = _j;
+	}
+}else{
 	g_sel[0] = _lvl;
 	g_sel[1] = _i;
 	g_sel[2] = _j;
+}
 	str_out = "";
 	str_uout = "";
 	a_pos = new Array(2);
+	a_pos2 = new Array(2);
 	a_pos[0] = (((g_height * 10 - 1 - _i) + (g_width * 10 - 1 - _j)) * 8 + (_lvl * 24));
 	a_pos[1] = (((g_width - 1) * 160 + 144) - (16 * _j) + (16 * _i));
+if(g_bool_square) {
+	if	(g_sel_corner2[0] == -1){
+		str_out = str_out + '<div id="sel_grnd" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
+		str_out = str_out + '<img src="active_tile.png"></div>';
+		str_uout = str_uout + '<div id="sel_box" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
+		str_uout = str_uout + '<img src="corner1.png"></div>';
+ 	}else{
+		a_pos2[0] = (((g_height * 10 - 1 - g_sel_corner1[1]) + (g_width * 10 - 1 - g_sel_corner1[2])) * 8 + (g_sel_corner1[0] * 24));
+		a_pos2[1] = (((g_width - 1) * 160 + 144) - (16 * g_sel_corner1[2]) + (16 * g_sel_corner1[1]));
+		str_out = str_out + '<div id="sel_grnd" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
+		str_out = str_out + '<img src="active_tile.png"></div>';
+		str_out = str_out + '<div id="sel_grnd" style="position:absolute; bottom:' + a_pos2[0] + 'px; left:' + a_pos2[1] + 'px;">';
+		str_out = str_out + '<img src="active_tile.png"></div>';
+		str_uout = str_uout + '<div id="sel_box" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
+		str_uout = str_uout + '<img src="corner2.png"></div>';
+		str_uout = str_uout + '<div id="sel_box" style="position:absolute; bottom:' + a_pos2[0] + 'px; left:' + a_pos2[1] + 'px;">';
+		str_uout = str_uout + '<img src="corner1.png"></div>';
+	}
+}else {
 	str_out = str_out + '<div id="sel_grnd" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
 	str_out = str_out + '<img src="active_tile.png"></div>';
 	str_uout = str_uout + '<div id="sel_box" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
 	str_uout = str_uout + '<img src="selected.png"></div>';
+}
 	eval('document.getElementById("sel_' + (_lvl + 1) + '")').innerHTML = str_out;
 	eval('document.getElementById("usel_' + (_lvl + 1) + '")').innerHTML = str_uout;
 	eval("document.getElementById('sel_" + (_lvl + 1) + "')").style.visibility = "visible";
@@ -299,7 +341,7 @@ function build_workarea() {
 		}
 	}
 	document.getElementById("workarea").innerHTML = str_out;
-	for (lev = 0; lev < 4; lev++) {
+	for (lev = 0; lev < g_max_levels; lev++) {
 		str_sel = "";
 		for (k = 0; k < g_height; k++) {
 			for (j = 0; j < g_width; j++) {
@@ -316,7 +358,7 @@ function build_workarea() {
 	document.getElementById("updating").style.visibility = "hidden";
 }
 function set_selected_floor() {
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < g_max_levels; i++) {
 		if (i == g_lvl) {
 			eval("document.getElementById('lv_" + (i + 1) + "')").style.visibility = "visible";
 		}else {
@@ -329,6 +371,12 @@ function set_selected_floor() {
 	g_sel[0] = -1;
 	g_sel[1] = -1;
 	g_sel[2] = -1;
+	g_sel_corner1[0] = -1;
+	g_sel_corner1[1] = -1;
+	g_sel_corner1[2] = -1;
+	g_sel_corner2[0] = -1;
+	g_sel_corner2[1] = -1;
+	g_sel_corner2[2] = -1;
 }
 function make_image_map() {
 	str_out = "";
@@ -368,7 +416,7 @@ function change_floor(_int) {
 	}else {
 		alert('Cannot change level, boundary reached');
 	}
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < g_max_levels; i++) {
 		if (i <= g_lvl) {
 			show_floor(i);
 		}else {
@@ -976,9 +1024,9 @@ function update_img() {
     var sp_Yoffset = 0;
     var px_Xoffset = 0;
     var px_Yoffset = 0;
-    if (isNaN(document.f_text.sprite_num.value)) {
-        alert("Cannot update image, sprite number is not a number");
-    }else {
+		if (isNaN(document.f_text.sprite_num.value)){
+			document.f_text.sprite_num.value = 1
+		}
         if (document.f_text.sprite_num.value > 0 && document.f_text.sprite_num.value < (Math.floor(((imgt.width * 2) + 2)/66) * Math.floor((imgt.height * 2) + 2)/82)) {
             sp_Xoffset = (document.f_text.sprite_num.value - 1);
             px_Xoffset = sp_Xoffset * 66;
@@ -1008,7 +1056,6 @@ function update_img() {
 				;
 			};
         };
-    };
 };
 //Adds a value to the sprite number, also affects image
 function add_tile_num(int_n) {
@@ -1017,14 +1064,13 @@ function add_tile_num(int_n) {
     srcf = srcf + "\\" + document.f_text.image_name.value;
     imgt.src = srcf;
     if (isNaN(document.f_text.sprite_num.value)) {
-        alert("Cannot update image, sprite number is not a number");
-    }else {
+        document.f_text.sprite_num.value = 1;
+    }
         if ((parseInt(document.f_text.sprite_num.value) + int_n) > 0 && (parseInt(document.f_text.sprite_num.value) + int_n) < (Math.floor(((imgt.width * 2) + 2)/66) * Math.floor((imgt.height * 2) + 2)/82)) {
             document.f_text.sprite_num.value = parseInt(document.f_text.sprite_num.value) + int_n;
         }else {
             alert("Cannot update image, sprite number outside image boundaries");
         };
-    };
     update_img();
 };
 
@@ -1568,6 +1614,7 @@ function toggle_lua_dialog() {
     };
 };
 function toggle_map_dialog() {
+	update_map();
     if (document.getElementById("map_dialog").style.visibility == "visible") {
         document.getElementById("map_dialog").style.visibility = "hidden";
 		document.getElementById("bt_map_in_out").style.backgroundColor = "#FFFFFF";
@@ -1818,7 +1865,7 @@ function switch_tileset(_div) {
 	}
 
 	document.getElementById(_div).innerHTML = str_list;
-	update_map();
+	//update_map();
 }
 
 //
@@ -1835,8 +1882,8 @@ function get_tile_img(_image, _offset, _tile_id) {
     var px_Xoffset = 0;
     var px_Yoffset = 0;
     if (isNaN(_offset)) {
-        alert("Cannot update image, sprite number is not a number");
-    }else {
+        _offset = 1
+    }
         if ( _offset > 0 && _offset < (Math.floor(((imgt.width * 2) + 2)/66) * Math.floor((imgt.height * 2) + 2)/82)) {
             sp_Xoffset = ( _offset - 1);
             px_Xoffset = sp_Xoffset * 66;
@@ -1863,7 +1910,6 @@ function get_tile_img(_image, _offset, _tile_id) {
 				;
 			};
         };
-    };
 	return str_out;
 };
 
@@ -1879,8 +1925,8 @@ function get_small_tile_img(_image, _offset) {
     var px_Xoffset = 0;
     var px_Yoffset = 0;
     if (isNaN(_offset)) {
-        alert("Cannot update image, sprite number is not a number");
-    }else {
+        _offset = 1
+    }
         if ( _offset > 0 && _offset < (Math.floor(((imgt.width) + 1)/33) * Math.floor((imgt.height) + 1)/41)) {
             sp_Xoffset = ( _offset - 1);
             px_Xoffset = sp_Xoffset * 33;
@@ -1905,14 +1951,62 @@ function get_small_tile_img(_image, _offset) {
 				;
 			};
         };
-    };
 	return str_out;
 };
 //
 function assign_tile(_num) {
-//g_sel[0 : level, 1 : i, 2 : j]
 var a_tile_img_info = new Array(2)
 var str_lua = ""
+var a_bounds = new Array(-1,-1,-1,-1)
+if (g_bool_square) {
+	if (g_sel_corner1[0] != -1 && g_sel_corner2[0] != -1){
+	
+	if (g_sel_corner1[1] < g_sel_corner2[1]){
+		a_bounds[0] = g_sel_corner1[1];
+		a_bounds[1] = g_sel_corner2[1];
+	}else{
+		a_bounds[1] = g_sel_corner1[1];
+		a_bounds[0] = g_sel_corner2[1];		
+	};
+	if (g_sel_corner1[2] < g_sel_corner2[2]){
+		a_bounds[2] = g_sel_corner1[2];
+		a_bounds[3] = g_sel_corner2[2];
+	}else{
+		a_bounds[3] = g_sel_corner1[2];
+		a_bounds[2] = g_sel_corner2[2];		
+	};
+
+	for (_n=a_bounds[0];_n<=a_bounds[1];_n++) {
+		for (_m=a_bounds[2];_m<=a_bounds[3];_m++) {
+
+				g_map_data[g_sel_corner1[0]][_m][_n][g_tile_type] = _num;
+				if(_num == 0) {
+					document.getElementById('sprite_' + g_tile_type + '_' + g_sel_corner1[0] + '_' + ((g_width * 10) - 1 - _m) + '_' + _n + '_0').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="40">';
+					document.getElementById('sprite_' + g_tile_type + '_' + g_sel_corner1[0] + '_' + ((g_width * 10) - 1 - _m) + '_' + _n + '_1').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="16">';	
+				}else {
+					str_lua = g_a_tile_info[_num - 1];
+					a_tile_img_info[0] = extract_images(str_lua, 0);
+					a_tile_img_info[1] = extract_images(str_lua, 1);
+					document.getElementById('sprite_' + g_tile_type + '_' + g_sel_corner1[0] + '_' + ((g_width * 10) - 1 - _m) + '_' + _n + '_0').innerHTML = get_small_tile_img(a_tile_img_info[0],a_tile_img_info[1])
+					document.getElementById('sprite_' + g_tile_type + '_' + g_sel_corner1[0] + '_' + ((g_width * 10) - 1 - _m) + '_' + _n + '_1').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="set_'+g_tile_type+'.gif" width="32" height="16">'
+				}
+
+			}
+		}
+		//Disengage and update
+		g_sel_corner1[0] = -1
+		g_sel_corner1[1] = -1
+		g_sel_corner1[2] = -1
+		g_sel_corner2[0] = -1
+		g_sel_corner2[1] = -1
+		g_sel_corner2[2] = -1
+		//update_map();
+	}else {
+		alert("Both corners must be selected first")
+	}
+}else {
+//g_sel[0 : level, 1 : i, 2 : j]
+
 	if (g_sel[0] != -1 && g_sel[1] != -1 && g_sel[2] != -1) {
 
 		g_map_data[g_sel[0]][g_sel[2]][g_sel[1]][g_tile_type] = _num;
@@ -1920,21 +2014,22 @@ var str_lua = ""
 		//str_out = str_out + '<img style="position:absolute; bottom:0px; left:0px;" src="test_'+typ+'.png" width="32" height="40"></div>';
 		//str_out = str_out + '<img style="position:relative; bottom:0px; left:0px;" src="blank.gif" width="32" height="40"></div>';
 		if(_num == 0) {
-			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_height * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_0').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="40">';
-			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_height * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_1').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="16">';	
+			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_width * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_0').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="40">';
+			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_width * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_1').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="16">';	
 		}else {
 			str_lua = g_a_tile_info[_num - 1];
 			a_tile_img_info[0] = extract_images(str_lua, 0);
 			a_tile_img_info[1] = extract_images(str_lua, 1);
-			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_height * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_0').innerHTML = get_small_tile_img(a_tile_img_info[0],a_tile_img_info[1])
-			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_height * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_1').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="set_'+g_tile_type+'.gif" width="32" height="16">'
+			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_width * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_0').innerHTML = get_small_tile_img(a_tile_img_info[0],a_tile_img_info[1])
+			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_width * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_1').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="set_'+g_tile_type+'.gif" width="32" height="16">'
 		}
-		update_map();
+		//update_map();
 	}else {
 		alert("Please select a tile on the map.")
 	}
+}
 };
-function update_map() {
+function update_map_hex() {
 	str_map_dialog = "" + int_to_hex(g_width * 10) + " " + int_to_hex(g_height * 10) + " " + int_to_hex(g_levels)+ " ";
 	for (xx_l=0; xx_l < g_levels; xx_l++) {
 		for (xx_i=0; xx_i < g_width * 10; xx_i++) {
@@ -1948,7 +2043,28 @@ function update_map() {
 	}
 	document.f_text.map_text.value = str_map_dialog
 }
-function load_map() {
+function update_map() {
+	str_map_dialog = "-- The " + document.f_text.map_name.value + " map was created by " + document.f_text.tx_map_auth.value + "\n"
+	str_map_dialog +="-- LUA generated by Nachtwolf's map editor version 2.0\n\n"
+	str_map_dialog += 'AddLuaMap {\n	Name = "'+document.f_text.map_name.value+'",\n	X = '+g_width * 10+',\n	Y = '+g_height * 10+',\n	Z = '+g_levels+',\n	MapData = {\n';
+	for (xx_l=0; xx_l < g_levels; xx_l++) {
+		str_map_dialog += '	['+(xx_l + 1)+'] = {\n'
+		for (xx_j=0; xx_j < g_height * 10; xx_j++) {
+			str_map_dialog += "		"
+			for (xx_i=0; xx_i < g_width * 10; xx_i++) {
+				str_map_dialog += "{"+g_map_data[xx_l][g_width * 10 - 1 - xx_i][xx_j][0] + ",";
+				str_map_dialog += g_map_data[xx_l][g_width * 10 - 1 - xx_i][xx_j][1] + ",";
+				str_map_dialog += g_map_data[xx_l][g_width * 10 - 1 - xx_i][xx_j][2] + ",";
+				str_map_dialog += g_map_data[xx_l][g_width * 10 - 1 - xx_i][xx_j][3] + "}, ";
+			}
+			str_map_dialog += "\n"
+		}
+		str_map_dialog += "		},\n"	
+	}
+	str_map_dialog +="	},\n}"
+	document.f_text.map_text.value = str_map_dialog
+}
+function load_map_hex() {
 	document.getElementById("updating").style.visibility = "visible";
 	var str_map_hex = document.f_text.map_text.value;
 	var int_x = hex_to_int(str_map_hex.substring(0,2));
@@ -1981,19 +2097,119 @@ function load_map() {
 	for (xx_l=0; xx_l < g_levels; xx_l++) {
 		make_floor(xx_l);
 	}
-	update_map();
+	//update_map();
 	change_floor(0);
 	document.getElementById("updating").style.visibility = "hidden";
 }
+
+function load_map() {
+	document.getElementById("updating").style.visibility = "visible";
+	var str_map_lua = document.f_text.map_text.value;
+	var int_x = str_map_lua.substring(str_map_lua.indexOf("X = ") + 4, str_map_lua.indexOf(",",str_map_lua.indexOf("X = ") + 4));
+	var int_y = str_map_lua.substring(str_map_lua.indexOf("Y = ") + 4, str_map_lua.indexOf(",",str_map_lua.indexOf("Y = ") + 4));
+	var int_z = str_map_lua.substring(str_map_lua.indexOf("Z = ") + 4, str_map_lua.indexOf(",",str_map_lua.indexOf("Z = ") + 4));
+	//Restore globals
+	g_levels = int_z;
+	g_width = int_x / 10;
+	g_height = int_y / 10;
+	document.f_text.tx_w.value = g_width;
+	document.f_text.tx_h.value = g_height;
+	document.f_text.tx_lv.value = g_levels;
+	scale_mapview();
+	//Initialise the cursor
+	var cursor = 0;
+	str_map_lua = str_map_lua.replace(/[{}\s]/g,"");
+	str_map_lua = str_map_lua.substr(str_map_lua.indexOf("[1]=") + 4);
+	str_map_lua = str_map_lua.replace(/\[\d+\]=/g,"");
+	a_mapdata = str_map_lua.split(",");
+	//index 0 to dimension + 1 ( dimension + 1 is empty)
+	for (xx_l=0; xx_l < g_levels; xx_l++) {
+		for (xx_j=0; xx_j < g_height * 10; xx_j++) {
+			for (xx_i=0; xx_i < g_width * 10; xx_i++) {
+				g_map_data[xx_l][g_width * 10 - 1 - xx_i][xx_j][0] = a_mapdata[cursor];
+				g_map_data[xx_l][g_width * 10 - 1 - xx_i][xx_j][1] = a_mapdata[cursor + 1];
+				g_map_data[xx_l][g_width * 10 - 1 - xx_i][xx_j][2] = a_mapdata[cursor + 2];
+				g_map_data[xx_l][g_width * 10 - 1 - xx_i][xx_j][3] = a_mapdata[cursor + 3];
+				cursor = cursor + 4;
+			}
+		}
+		cursor = cursor + 1;	
+	}
+	for (xx_l=0; xx_l < g_levels; xx_l++) {
+		make_floor(xx_l);
+	}
+	//update_map();
+	change_floor(0);
+	document.getElementById("updating").style.visibility = "hidden";
+}
+
+function act_square() {
+    if (g_bool_square) {
+        document.getElementById("bt_square").style.backgroundColor = "#FFFFFF";
+        g_bool_square = false;
+        g_bool_square_set = false;
+		g_sel_corner1[0] = -1;
+		g_sel_corner1[1] = -1;
+		g_sel_corner1[2] = -1;
+		g_sel_corner2[0] = -1;
+		g_sel_corner2[1] = -1;
+		g_sel_corner2[2] = -1;
+		eval("document.getElementById('sel_" + (g_lvl + 1) + "')").style.visibility = "hidden";
+		eval("document.getElementById('usel_" + (g_lvl + 1) + "')").style.visibility = "hidden";
+    }else {
+        document.getElementById("bt_square").style.backgroundColor = "#CCCCFF";
+		g_sel[0] = -1;
+		g_sel[1] = -1;
+		g_sel[2] = -1;
+        g_bool_square = true;
+        g_bool_square_set = false;
+		eval("document.getElementById('sel_" + (g_lvl + 1) + "')").style.visibility = "hidden";
+		eval("document.getElementById('usel_" + (g_lvl + 1) + "')").style.visibility = "hidden";
+    };
+};
+//Shape's Square making tool
+function make_square() {
+    var j_min = 0;
+    var j_max = 0;
+    var k_min = 0;
+    var k_max = 0;
+    var inv = false;
+    if (x_1 <= x_2) {
+        j_min = x_1;
+        j_max = x_2;
+    }else {
+        j_min = x_2;
+        j_max = x_1;
+    };
+    if (y_1 <= y_2) {
+        k_min = y_1;
+        k_max = y_2;
+    }else {
+        k_min = y_2;
+        k_max = y_1;
+    };
+    for (ok = k_min; ok <=  k_max; ok++) {
+        for (oj = j_min; oj <= j_max; oj++) {
+            if ((oj != x_1 || ok != y_1) && (oj != x_2 || ok != y_2)) {
+            a_tiles[g_lvl][oj][ok] = !a_tiles[g_lvl][oj][ok];
+            };
+        };
+    };
+    //update_map();
+    save_lua();
+};
 //-->
 </script>  
 </head>
 
 <body>
-<div id="bt_square" class="button" style="top:147px;"><a onclick="change_floor(1);return(false);" href="#"><strong>UP</strong></a></div>
+<div id="bt_invert" class="button" style="top:147px;"><a onclick="change_floor(1);return(false);" href="#"><strong>UP</strong></a></div>
 <div id="bt_invert" class="button" style="top:177px;"><a onclick="change_floor(-1);return(false);" href="#"><strong>DOWN</strong></a></div>
 <div id="bt_invert" class="button" style="top:217px;"><a onclick="switch_mode(1);return(false);" href="#"><strong>EDIT MODE</strong></a></div>
 <div id="bt_invert" class="button" style="top:247px;"><a onclick="switch_mode(0);return(false);" href="#"><strong>VIEW MODE </strong></a></div>
+
+<div id="bt_square" class="button" style="top:290px;"><a onclick="act_square();return(false);" href="#"><strong>SQUARE </strong></a></div>
+
 <div id="bt_invert" class="f_button" style="left:40px;"><a onclick="switch_tileset('floor');return(false);" href="#"><strong>floor</strong></a></div>
 <div id="bt_invert" class="f_button" style="left:120px;"><a onclick="switch_tileset('left_wall');return(false);" href="#"><strong>L wall</strong></a></div>
 <div id="bt_invert" class="f_button" style="left:200px;"><a onclick="switch_tileset('right_wall');return(false);" href="#"><strong>R wall</strong></a></div>
@@ -2021,8 +2237,18 @@ function load_map() {
       <input name="ext_path" type="text" value="C:\Program Files\UFO2000 Beta\extensions\folder-name" size="80"><br></td>
     <td>Tileset name :<br>
       <input name="set_name" type="text" value="New tile set" size="20" onchange="" disabled></td>
-	<td>Author (- email) : <br>
+	<td>Tileset Author (- email) : <br>
       <input name="tx_auth" type="text" value="Author name - email" size="40" onchange="" disabled></td>
+  </tr>
+</table>
+</div>
+<div style="position:absolute; top:69px; left:540px;">
+<table border="0" cellspacing="0" cellpadding="3">
+  <tr>
+	 <td>Map name (ends with 2 digits):<br>
+      <input name="map_name" type="text" value="mapname00" size="40" onchange=""></td>
+	<td>Map Author (- email) : <br>
+      <input name="tx_map_auth" type="text" value="Author name - email" size="40" onchange=""></td>
   </tr>
 </table>
 </div>
@@ -2033,6 +2259,15 @@ function load_map() {
 <div id="workarea" style="width:100%; height: 100%;">
 <div style="position:absolute; bottom:0px; left:160px;"><img src="active_grid.gif"></div>
 </div>
+<script type="text/javascript">
+for (i=1;i<=g_max_levels;i++){
+document.write('<div id="lv_' + i + '" style="width:100%; height: 100%; visibility:visible;"><div style="position:absolute; bottom:0px; left:304px;"></div></div>\n');
+document.write('<div id="sel_' + i + '" style="width:100%; height: 100%; visibility:visible;"><div style="position:absolute; bottom:0px; left:304px;"></div></div>\n');
+document.write('<div id="sum_' + i + '" style="width:100%; height: 100%; visibility:visible;"><div style="position:absolute; bottom:0px; left:304px;"></div></div>\n');
+document.write('<div id="floor_' + i + '" style="width:100%; height: 100%; visibility:visible;"><div style="position:absolute; bottom:0px; left:304px;"></div></div>\n');
+document.write('<div id="usel_' + i + '" style="width:100%; height: 100%; visibility:visible;"><div style="position:absolute; bottom:0px; left:304px;"></div></div>\n');
+}
+</script><!-- 
 <div id="lv_1" style="width:100%; height: 100%; visibility:visible;">
 <div style="position:absolute; bottom:0px; left:304px;"></div>
 </div>
@@ -2092,7 +2327,7 @@ function load_map() {
 </div>
 <div id="usel_4" style="width:100%; height: 100%; visibility:visible;">
 <div style="position:absolute; bottom:0px; left:304px;"></div>
-</div>  
+</div> -->  
 <div id="edit_all" style="width:100%; height: 100%; visibility:visible;">
 <div style="position:absolute; bottom:0px; left:0px;"><img src="blank.gif" name="selector" width="320" height="240" border="0" usemap="#Map" id="selector">
   <map name="Map" id="Map">
@@ -2144,22 +2379,23 @@ function load_map() {
       <strong>Saving :</strong> Copy the following HEX code and paste it as a .map file in any hex editor to save your map.<br>
       <strong>Loading :</strong> Erase the current dialog contents, copy your existing MAP's HEX code and paste it in the dialog, then press the "LOAD MAP" button to load a map in the editor.<br>
       <strong>Editing :</strong> (Not recommended) Edit manually the MAP file from this dialog, press LOAD MAP to update the map in the editor. Be very careful. <br>
-	  <div id="bt_load_map" style="width:100px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="load_map();return(false);" href="#"><strong>LOAD MAP</strong></a></div>
+	  <div id="bt_load_map" style="width:100px; float:left; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="load_map();return(false);" href="#"><strong>LOAD LUA MAP</strong></a></div>
+	  <div id="bt_load_map" style="width:100px; float:left; clear:none; margin:0px 0px 0px 30px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="load_map_hex();return(false);" href="#"><strong>LOAD HEX MAP</strong></a></div>
 <br>
 
 <textarea style="background-color:#FFFFFF; font-size:12px;" name="map_text" id="map_text" cols="143" rows="40"></textarea>
 </div>
 </form>
 <div id="bt_help" class="button" style="top:10px; left:1000px; background-color:#CCCCFF;"><a onclick="toggle_help();return(false);"  href="#"><strong>HELP</strong></a></div>
-<div id="bt_lua_in_out" class="lua_button" style="top:10px; left:600px; background-color:#FFFFFF;"><a onclick="toggle_lua_dialog();return(false);" href="#"><strong>LUA INPUT / OUTPUT DIALOG</strong></a></div>
-<div id="bt_map_in_out" class="lua_button" style="top:10px; left:800px; background-color:#FFFFFF;"><a onclick="toggle_map_dialog();return(false);" href="#"><strong>MAP INPUT / OUTPUT DIALOG</strong></a></div>
+<div id="bt_lua_in_out" class="lua_button" style="top:10px; left:800px; background-color:#FFFFFF;"><a onclick="toggle_lua_dialog();return(false);" href="#"><strong>TILE INPUT / OUTPUT DIALOG</strong></a></div>
+<div id="bt_map_in_out" class="lua_button" style="top:10px; left:600px; background-color:#FFFFFF;"><a onclick="toggle_map_dialog();return(false);" href="#"><strong>MAP INPUT / OUTPUT DIALOG</strong></a></div>
 <div id="h_win" style="position:absolute; top:30px; left:026px; width:1024px; height:725px; overflow:auto; padding:5px 12px 5px 12px; border:1px solid #666699; background-color:#EEEEFF; visibility:visible;">
-  <p><strong>Nachtwolf's map editor, version 1.0</strong></p>
+  <p><strong>Nachtwolf's map editor, version 2.0</strong></p>
   <p><strong>HOW TO USE THIS TOOL</strong></p>
 <p><strong>1. Getting started<br>
   </strong><br>
-  Download an HEX editor, I personnally recommend <a href="http://www.chmaas.handshake.de/delphi/freeware/xvi32/xvi32.htm#download">XVI32<br>
-  </a>Have a completed LUA tileset ready, it should be composed of only ONE tile list from [1] to the last in the tileset<br>
+  If you want to start from hex maps, download an HEX editor, I personnally recommend <a href="http://www.chmaas.handshake.de/delphi/freeware/xvi32/xvi32.htm#download">XVI32<br>
+  </a>Have a completed LUA tileset ready, it should be composed of only ONE LIST of tiles numbered from [1] to the last in the tileset<br>
   Make sure this tileset doesn't use &quot;blanks&quot;, the &quot;blanks&quot; are not supported yet. <br>
   Start the map editor.<br>
   <u>MAKE SURE YOU DON'T HIT REFRESH</u> : The map editor is web-based, that means it will reset if you refresh the page. </p>
@@ -2167,27 +2403,36 @@ function load_map() {
   </strong><u><br>
   STEP 1 Current Extension path</u> : the folder where the PNG images of the tileset you want to modify are located.<br>
   <u>STEP 2 Tileset lua </u> : Open the LUA INPUT / OUTPUT DIALOG and copy paste your tileset's lua in the textfield, then load the said LUA.<br>
-  <u>STEP 3 Map initialisation :</u> Open the MAP INPUT / OUTPUT DIALOG and load the map (pasting from the hex editor or leaving as is) <u><br>
+  <u>STEP 3 Map initialisation :</u> Open the MAP INPUT / OUTPUT DIALOG and load the map (you can load both hex or lua, just make sure you hit the right button) <u><br>
   STEP 4  Tiles choice :</u>Select the type of tiles you want to start editing with, ie floor. Click twice if nothing happens. <br>
     <br>
-    (I.E. Tileset uses the image file &quot;europa.png&quot; which is located at C:\UFO2000 Beta\extensions\terrain-europa\europa.png : Main Setting would then read &quot;C:\UFO2000 Beta\extensions\terrain-europa&quot; as 
+    (I.E. If the tileset uses the image file &quot;europa.png&quot; which is located at C:\UFO2000 Beta\extensions\terrain-europa\europa.png : Main Setting would then read &quot;C:\UFO2000 Beta\extensions\terrain-europa&quot; as 
       
 
    Current Extension path.<br>
     <br>
     <strong>3. Importing / start from scratch<br>
     </strong><br>
+    .MAP hex map files <br>
     If you have an existing .map file you wish to work from you need XVI32 or another Hex editor.<br> 
     Select the whole hex source and copy it as an hex string (With XVI32 : Select with shift and arrow keys, then Edit / Clipboard / Copy as hex string)<br>
-    Open the MAP INPUT / OUTPUT DIALOG, paste the hex string. <br>
+    Open the MAP INPUT / OUTPUT DIALOG, paste the lua string. <br>
+Follow the instructions for Loading, then close the dialog.    <br>
+    <br>
+    .LUA map files <br>
+    Open the lua file<br>
+    Copy the source of the map you want to edit <br>
+    Open the MAP INPUT / OUTPUT DIALOG, paste the lua string. <br>
     Follow the instructions for Loading, then close the dialog.<br>
     <br>
   If you prefer starting from scratch then you can set the dimensions to resize your map, reload from the MAP INPUT / OUTPUT DIALOG and start from there. </p>
 <p><strong>4. Saving</strong></p>
-<p>To save to .map you need XVI32 or another Hex editor. <br>
-  First, copy the hex string you find in the MAP INPUT / OUTPUT DIALOG. Then open your hex editor and make a new blank file.<br>
-  Then insert the copied string as an hex string (With XVI32 : Edit / insert string / Hex string &gt; PASTE &gt; OK)<br>
-  Save the file with the filename you wish at the .map extension. ie house.map</p>
+<p>Mapmaker 2.0 only supports saving to LUA map file <br>
+  To save to .map (deprecated), use mapmaker 1.0. <br>
+  First, copy the lua string you find in the MAP INPUT / OUTPUT DIALOG. <br>
+  Then open your .lua file and paste the text in.<br>
+  Save the lua map file.<br>
+  (.lua files can contain several maps) </p>
 <p><strong>5.  Edit mode </strong><br>
     <br>
     In this mode, you see a summary image of what is found on this tile. <br>
@@ -2195,12 +2440,17 @@ function load_map() {
     Green circle means an object is set.<br>
     White lines on either sides means that either walls are set. </p>
 <p><strong>6. View mode</strong></p>
-<p>This mode is WYSIWYG, which means you see the changes as you make them and you see the actual ingame look. </p>
+<p>This mode is WYSIWYG, which means you see the changes as you make them and you see the actual ingame look.<br>
+  <strong><br>
+  7. Square tool</strong></p>
+<p>Use this tool to make squares, activate it, click both corners and select the tile you want to paint on the area. </p>
 <p><strong>FIXES</strong></p>
-<p><strong>No fixes yet </strong></p>
+<p>- Fixed issue #001 : Square tool has been added.<br>
+  - Fixed issue #004 : We can now save and load Lua maps. <br>
+  - Fixed issue #005 : Lua maps can support 32 000 tiles.<br>
+  - Fixed issue #006 : Up to 16 levels supported.</p>
 <p><strong>KNOWN ISSUES<br>
   <br>
-  Issue #001 : Adding a quick key to fill a level with said tile.<br>
   Issue #002 : Map gets reset if you resize it.<br>
   Issue #003 : Code gets laggy when the map size increases.<br>
 </strong><br>
