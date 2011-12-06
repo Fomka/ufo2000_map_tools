@@ -1018,7 +1018,7 @@ function update_img() {
     var srcf = "";
     var imgt = new Image();
     srcf = "file:///" + document.f_text.ext_path.value;
-    srcf = srcf + "\\" + document.f_text.image_name.value;
+    srcf = srcf + "/" + document.f_text.image_name.value;
     imgt.src = srcf;
     var sp_Xoffset = 0;
     var sp_Yoffset = 0;
@@ -1061,7 +1061,7 @@ function update_img() {
 function add_tile_num(int_n) {
     var imgt = new Image();
     srcf = "file:///" + document.f_text.ext_path.value;
-    srcf = srcf + "\\" + document.f_text.image_name.value;
+    srcf = srcf + "/" + document.f_text.image_name.value;
     imgt.src = srcf;
     if (isNaN(document.f_text.sprite_num.value)) {
         document.f_text.sprite_num.value = 1;
@@ -1875,7 +1875,7 @@ function get_tile_img(_image, _offset, _tile_id) {
     var srcf = "";
     var imgt = new Image();
     srcf = "file:///" + document.f_text.ext_path.value;
-    srcf = srcf + "\\" + _image;
+    srcf = srcf + "/" + _image;
     imgt.src = srcf;
     var sp_Xoffset = 0;
     var sp_Yoffset = 0;
@@ -1918,7 +1918,7 @@ function get_small_tile_img(_image, _offset) {
     var srcf = "";
     var imgt = new Image();
     srcf = "file:///" + document.f_text.ext_path.value;
-    srcf = srcf + "\\" + _image;
+    srcf = srcf + "/" + _image;
     imgt.src = srcf;
     var sp_Xoffset = 0;
     var sp_Yoffset = 0;
