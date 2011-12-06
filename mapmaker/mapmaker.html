@@ -1,0 +1,2232 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>UFO2000 Map editor, by Nachtwolf</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+body,td,th,a {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    color: #003366;
+	text-decoration:none;
+}
+body {
+    background-color: #EEEEEE;
+}
+input,select,option {
+	font-family:"Courier New", Courier, mono;
+	font-size: 12px;
+}
+.button {
+    position:absolute;
+	left:390px;
+    padding:0px;
+    border:1px solid #666699;
+    background-color:#FFFFFF;
+}
+.button a {
+	display:block;
+    padding:2px;
+	width:70px;
+	color: #003366;
+	text-decoration:none;
+}
+.lua_button {
+    position:absolute;
+	left:40px;
+    padding:0px;
+    border:1px solid #666699;
+    background-color:#FFFFFF;
+}
+.lua_button a {
+	display:block;
+    padding:2px;
+	width:180px;
+	color: #003366;
+	text-decoration:none;
+}
+.sm_button {
+    position:absolute;
+    text-align:center;
+    top:179px;
+    padding:0px;
+    border:1px solid #666699;
+    background-color:#FFFFFF;
+}
+.sm_button a {
+	display:block;
+    padding:2px;
+	width:20px;
+	color: #003366;
+	text-decoration:none;
+}
+.f_button {
+    position:absolute;
+	top:146px;
+    padding:0px;
+    border:1px solid #666699;
+    background-color:#FFFFFF;
+}
+.f_button a {
+	display:block;
+    padding:2px;
+	width:70px;
+	color: #003366;
+	text-decoration:none;
+}
+.nav {
+    position:absolute;
+    text-align:center;
+    top:25px;
+    border:1px solid #666699;
+    background-color:#FFFFFF;
+}
+.nav a{
+	display:block;
+    padding:2px;
+	width:55px;
+	color: #003366;
+	text-decoration:none;
+}
+a:visited {
+    color: #003366;
+	text-decoration:none;
+}
+a:hover {
+    color: #003366;
+	text-decoration:underline;
+}
+a:active {
+    color: #3366FF;
+	text-decoration:underline;
+}
+#tx_num, #tx_max {
+	font-family:"Courier New", Courier, mono;
+    font-size: 16px;
+	font-weight:bold;
+    color: #003366;
+	padding:2px;
+}
+#tx_max {
+	font-size: 12px;
+}
+.title {
+	font-weight: bold;
+	background-color: #CCCCFF;
+	padding: 2px;
+	/*background-color:#FFFFFF;*/
+}
+.bad_title {
+	font-weight: bold;
+	color: #666666;
+	padding: 2px;
+	background-color:#CCCCCC;
+}
+.tile_list {
+    position:absolute;
+    top:165px;
+	left:40px;
+	width:312px;
+	height:500px;
+	font-weight: bold;
+	color: #666666;
+	padding: 1px;
+	border:1px solid #666699;
+	background-color:#D4D0C8;
+	overflow:auto;
+}
+.style2 {font-size: 14px}
+.style3 {color: #CC0000}
+-->
+</style>
+<br>
+<script language="JavaScript">
+<!--
+//Changing Globals
+// editing mode, 0 = tiles, 1 = summary
+var g_mode = 0;
+var g_width = 1;
+var g_height = 1;
+var g_levels = 1;
+var g_init = true;
+var g_lvl = 0;
+var g_tile = 1;
+var g_sel = new Array(-1,-1,-1)
+var g_selected_tile = 1;
+var g_active_tiles = 1;
+var g_bool_ignore_img_warn = true;
+var g_tile_type=0; //Floor editing
+//Static Globals
+var g_max_tiles = 254;
+// Initialisation : Arrays
+var g_map_data = 0
+
+function init_map_data(_level, _x, _y) {
+g_map_data = new Array(_level)
+g_map_data[0] = new Array(_x)
+	for (x_i = 0; x_i < _x; x_i++) {
+		g_map_data[0][x_i] = new Array(_y);
+		for (x_j = 0; x_j < _y; x_j++) {
+			g_map_data[0][x_i][x_j] = new Array(01,00,00,00)
+		};
+	};
+	for (x_l = 1; x_l < _level; x_l++) {
+		g_map_data[x_l] = new Array(_x)
+		for (x_i = 0; x_i < _x; x_i++) {
+			g_map_data[x_l][x_i] = new Array(_y);
+			for (x_j = 0; x_j < _y; x_j++) {
+				g_map_data[x_l][x_i][x_j] = new Array(00,00,00,00)
+			};
+		};
+	};
+}
+	
+init_map_data(1, 10, 10);
+var g_a_tile_info = new Array(g_max_tiles);
+	for (a_t = 0; a_t < g_max_tiles; a_t++) {
+		g_a_tile_info[a_t] = init_tile();
+	};
+var a_hex = new Array(16)
+for (hx = 0; hx < 10; hx++) {
+    a_hex[hx] = hx;
+};
+a_hex[10] = "A";
+a_hex[11] = "B";
+a_hex[12] = "C";
+a_hex[13] = "D";
+a_hex[14] = "E";
+a_hex[15] = "F";
+
+function int_to_hex(_int) {
+	str_ret = "";
+	str_ret = a_hex[Math.floor(_int/16)] + "" + a_hex[(_int%16)];
+	return str_ret;
+};
+function hex_to_int(_hex) {
+	var int_ret = 0;
+	int_ret = parseInt(eval("0x"+_hex))
+	return int_ret;
+};
+var g_bool_square = false;
+var g_bool_square_set = false;
+var x_1 = 0;
+var y_1 = 0;
+var x_2 = 0;
+var y_2 = 0;
+//Not initial calls anymore
+g_init = false;
+//-----------------------------------------------------------------------------------------------------
+
+//MAPVIEW MANAGEMENT FUNCTIONS
+
+//-----------------------------------------------------------------------------------------------------
+function switch_mode(_mode) {
+	g_mode = _mode;
+	if (g_mode == 0) {
+		document.getElementById('grid_legend').innerHTML = '<strong>MAP GRID</strong> View mode'
+	}else {
+		document.getElementById('grid_legend').innerHTML = '<strong>MAP GRID</strong> Edit mode'
+	};
+	change_floor(0);
+};
+function scale_mapview() {
+	document.getElementById("updating").style.visibility = "visible";
+	alert("Map will now update, this could take a few seconds\nIf the browser tells you the script is irresponsive, click continue");
+	if (!(isNaN(document.f_text.tx_w.value) || isNaN(document.f_text.tx_h.value) || isNaN(document.f_text.tx_lv.value))) {
+		g_width = parseInt(document.f_text.tx_w.value);
+		g_height = parseInt(document.f_text.tx_h.value);
+		g_levels = parseInt(document.f_text.tx_lv.value);
+		g_lvl = 0;
+	}else {
+		alert("Check map properties, all values must be numbers");
+	};
+	document.getElementById("mapview").style.width = ((g_width + g_height) * 160) + "px";
+	document.getElementById("mapview").style.height = ((g_width + g_height) * 80 + (g_levels * 24)) + "px";
+	document.getElementById("workarea").style.width = "100%";
+	document.getElementById("workarea").style.height = "100%";
+	for (i = 0; i < 4; i++) {
+		eval('document.getElementById("lv_' + (i + 1) + '")').style.width = "100%";
+		eval('document.getElementById("lv_' + (i + 1) + '")').style.height = "100%";
+		eval('document.getElementById("floor_' + (i + 1) + '")').style.width = "100%";
+		eval('document.getElementById("floor_' + (i + 1) + '")').style.height = "100%";
+		eval('document.getElementById("sel_' + (i + 1) + '")').style.width = "100%";
+		eval('document.getElementById("sel_' + (i + 1) + '")').style.height = "100%";
+		eval('document.getElementById("sel_' + (i + 1) + '")').style.visibility = "hidden";
+		eval('document.getElementById("sum_' + (i + 1) + '")').style.width = "100%";
+		eval('document.getElementById("sum_' + (i + 1) + '")').style.height = "100%";
+		eval('document.getElementById("usel_' + (i + 1) + '")').style.width = "100%";
+		eval('document.getElementById("usel_' + (i + 1) + '")').style.height = "100%";
+		eval('document.getElementById("usel_' + (i + 1) + '")').style.visibility = "hidden";
+	}
+	g_sel[0] = -1;
+	g_sel[1] = -1;
+	g_sel[2] = -1;
+	init_map_data(g_levels, g_width * 10, g_height * 10);
+	document.getElementById("edit_all").style.width = "100%";
+	document.getElementById("edit_all").style.height = "100%";
+	build_workarea()
+	change_floor(0)
+	document.getElementById("updating").style.visibility = "hidden";
+	update_map();
+};
+function sel_tile(_lvl,_i,_j) {
+	g_sel[0] = _lvl;
+	g_sel[1] = _i;
+	g_sel[2] = _j;
+	str_out = "";
+	str_uout = "";
+	a_pos = new Array(2);
+	a_pos[0] = (((g_height * 10 - 1 - _i) + (g_width * 10 - 1 - _j)) * 8 + (_lvl * 24));
+	a_pos[1] = (((g_width - 1) * 160 + 144) - (16 * _j) + (16 * _i));
+	str_out = str_out + '<div id="sel_grnd" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
+	str_out = str_out + '<img src="active_tile.png"></div>';
+	str_uout = str_uout + '<div id="sel_box" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
+	str_uout = str_uout + '<img src="selected.png"></div>';
+	eval('document.getElementById("sel_' + (_lvl + 1) + '")').innerHTML = str_out;
+	eval('document.getElementById("usel_' + (_lvl + 1) + '")').innerHTML = str_uout;
+	eval("document.getElementById('sel_" + (_lvl + 1) + "')").style.visibility = "visible";
+	eval("document.getElementById('usel_" + (_lvl + 1) + "')").style.visibility = "visible";
+};
+function build_workarea() {
+	document.getElementById("updating").style.visibility = "visible";
+	str_out = "";
+	str_sel = "";
+	for (k = 0; k < g_height; k++) {
+		for (j = 0; j < g_width; j++) {
+			str_out = str_out + '<div style="position:absolute; bottom:' + ((k + j) * 80) + 'px; left:' + (((g_height - 1) * 160) - (160 * k) + (160 * j)) + 'px;"><img src="active_grid.gif"></div>';
+		}
+	}
+	document.getElementById("workarea").innerHTML = str_out;
+	for (lev = 0; lev < 4; lev++) {
+		str_sel = "";
+		for (k = 0; k < g_height; k++) {
+			for (j = 0; j < g_width; j++) {
+				str_sel = str_sel + '<div style="position:absolute; bottom:' + ((k + j) * 80 + (lev * 24)) + 'px; left:' + (((g_height - 1) * 160) - (160 * k) + (160 * j)) + 'px;"><img src="active_level.png"></div>';
+			}
+		}
+		eval('document.getElementById("lv_' + (lev + 1) + '")').innerHTML = str_sel;
+		make_floor(lev);
+		if (lev > g_lvl) {
+			hide_floor(lev);
+		}
+	}
+	set_selected_floor()
+	document.getElementById("updating").style.visibility = "hidden";
+}
+function set_selected_floor() {
+	for (i = 0; i < 4; i++) {
+		if (i == g_lvl) {
+			eval("document.getElementById('lv_" + (i + 1) + "')").style.visibility = "visible";
+		}else {
+			eval("document.getElementById('lv_" + (i + 1) + "')").style.visibility = "hidden";
+			eval("document.getElementById('sel_" + (i + 1) + "')").style.visibility = "hidden";
+			eval("document.getElementById('usel_" + (i + 1) + "')").style.visibility = "hidden";
+		};
+	};
+	make_image_map();
+	g_sel[0] = -1;
+	g_sel[1] = -1;
+	g_sel[2] = -1;
+}
+function make_image_map() {
+	str_out = "";
+	img_width = ((g_width + g_height) * 160);
+	img_height = ((g_width + g_height) * 80 + (g_levels * 24));
+	document.images["selector"].width = img_width;
+	document.images["selector"].height = img_height;
+	a_pos = new Array(2);
+	a_pos[0] = 0;
+	a_pos[1] = 0;
+		for (j = 0 ; j < (g_width * 10) ; j++) {
+			for (i = 0 ; i < (g_height * 10); i++) {
+				a_pos[0] = ((i + j) * 8) + (g_levels * 24) - (g_lvl * 24) + 16;
+				a_pos[1] = (((g_width - 1) * 160 + 144) - (16 * j) + (16 * i));
+				str_out = str_out + '<area shape="poly" coords="' + (a_pos[1]) + ',' + (a_pos[0] - 7) + ',' + (a_pos[1] + 15) + ',' + (a_pos[0] - 15);
+				str_out = str_out + ',' + (a_pos[1] + 31) + ',' + (a_pos[0] - 7) + ',' + (a_pos[1] + 15) + ',' + (a_pos[0]) + '" href="#" onclick="sel_tile(' + g_lvl + ',' + i + ',' + j + ');return(false);">';
+			}
+		}
+		document.getElementById("Map").innerHTML = str_out;
+};
+function hide_floor(_lvl) {
+	eval("document.getElementById('floor_" + (_lvl + 1) + "')").style.visibility = "hidden";
+	eval("document.getElementById('sum_" + (_lvl + 1) + "')").style.visibility = "hidden";
+}
+function show_floor(_lvl) {
+	eval("document.getElementById('floor_" + (_lvl + 1) + "')").style.visibility = "hidden";
+	eval("document.getElementById('sum_" + (_lvl + 1) + "')").style.visibility = "hidden";
+	if (g_mode == 0 || _lvl != g_lvl) {
+		eval("document.getElementById('floor_" + (_lvl + 1) + "')").style.visibility = "visible";
+	}else {
+		eval("document.getElementById('sum_" + (_lvl + 1) + "')").style.visibility = "visible";
+	};
+}
+function change_floor(_int) {
+	if (((g_lvl + _int) >= 0) && ((g_lvl + _int) < g_levels)) {
+		g_lvl = g_lvl + _int
+	}else {
+		alert('Cannot change level, boundary reached');
+	}
+	for (i = 0; i < 4; i++) {
+		if (i <= g_lvl) {
+			show_floor(i);
+		}else {
+			hide_floor(i);
+		}
+	}
+	set_selected_floor()
+	document.getElementById('floor_legend').innerHTML = "- Floor " + (g_lvl + 1)
+}
+function make_floor(lev) {
+	str_out = "";
+	str_sum = "";
+	a_pos = new Array(2);
+	a_pos[0] = 0;
+	a_pos[1] = 0;
+	a_tile_img_info = new Array(0,0);
+	if (lev < g_levels) {
+		for (j = (g_height * 10) - 1; j >= 0 ; j--) {
+			for (i = (g_width * 10) - 1; i >= 0; i--) {
+				a_pos[0] = ((i + j) * 8 + (lev * 24));
+				a_pos[1] = (((g_height - 1) * 160 + 144) - (16 * j) + (16 * i));
+				str_out = str_out + '<div id="tile_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
+				str_sum = str_sum + '<div id="tile_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '" style="position:absolute; bottom:' + a_pos[0] + 'px; left:' + a_pos[1] + 'px;">';
+				for (typ = 0; typ < 4; typ++) {
+					/*str_out = str_out + '<div id="sprite_' + typ + '_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '_0" style="width:32px; height:40px; position:absolute; bottom:0px; left:0px; overflow:hidden;">';
+					//str_out = str_out + '<img style="position:absolute; bottom:0px; left:0px;" src="test_'+typ+'.png" width="32" height="40"></div>';
+					str_out = str_out + '<img style="position:relative; bottom:0px; left:0px;" src="blank.gif" width="32" height="40"></div>';
+					//str_out = str_out + '&nbsp;</div>';
+					str_sum = str_sum + '<div id="sprite_' + typ + '_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '_1" style="width:32px; height:40px; position:absolute; bottom:0px; left:0px; overflow:hidden;">';
+					//str_sum = str_sum + '<img style="position:absolute; bottom:0px; left:0px;" src="set_' + typ + '.gif"></div>';
+					str_sum = str_sum + '<img style="position:relative; bottom:0px; left:0px;" src="blank.gif"></div>';
+					//str_sum = str_sum + '&nbsp;</div>';*/
+					//        g_map_data[g_sel[0]][g_sel[2]][g_sel[1]][g_tile_type] = _num;
+					//str_out = str_out + '<div id="sprite_' + typ + '_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '_floor" style="width:32px; height:40px; position:absolute; bottom:0px; left:0px; overflow:hidden;">';
+					//str_out = str_out + '<img style="position:absolute; bottom:0px; left:0px;" src="test_'+typ+'.png" width="32" height="40"></div>';
+					//str_out = str_out + '<img style="position:relative; bottom:0px; left:0px;" src="blank.gif" width="32" height="40"></div>';
+					//_num = g_map_data[lev][(i)][((g_height * 10) - 1 - j)][typ];
+					_num = g_map_data[lev][((g_width * 10) - 1 - i)][((g_height * 10) - 1 - j)][typ];
+					if(_num == 0) {
+						str_out = str_out + '<div id="sprite_' + typ + '_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '_0" style="width:32px; height:40px; position:absolute; bottom:0px; left:0px; overflow:hidden;"><img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="40"></div>';
+						str_sum = str_sum + '<div id="sprite_' + typ + '_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '_1" style="width:32px; height:40px; position:absolute; bottom:0px; left:0px; overflow:hidden;"><img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="16"></div>';	
+					}else {
+						str_lua = g_a_tile_info[_num - 1];
+						a_tile_img_info[0] = extract_images(str_lua, 0);
+						a_tile_img_info[1] = extract_images(str_lua, 1);
+						str_out = str_out + '<div id="sprite_' + typ + '_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '_0" style="width:32px; height:40px; position:absolute; bottom:0px; left:0px; overflow:hidden;">'+ get_small_tile_img(a_tile_img_info[0],a_tile_img_info[1]) + '</div>';
+						str_sum = str_sum + '<div id="sprite_' + typ + '_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '_1" style="width:32px; height:40px; position:absolute; bottom:0px; left:0px; overflow:hidden;"><img style="position:absolute; bottom:0px; left:0px;" src="set_'+typ+'.gif" width="32" height="16"></div>'
+					}
+				}
+				str_out = str_out + '</div>';
+				str_sum = str_sum + '</div>';
+			};
+		};
+		eval("document.getElementById('floor_" + (lev + 1) + "')").innerHTML = str_out;
+		eval("document.getElementById('sum_" + (lev + 1) + "')").innerHTML = str_sum;
+		if (g_mode == 0) {
+			eval("document.getElementById('floor_" + (lev + 1) + "')").style.visibility = "visible";
+			eval("document.getElementById('sum_" + (lev + 1) + "')").style.visibility = "hidden";
+		}else {
+			eval("document.getElementById('floor_" + (lev + 1) + "')").style.visibility = "hidden";
+			eval("document.getElementById('sum_" + (lev + 1) + "')").style.visibility = "visible";
+		};
+		
+	}else {
+		eval("document.getElementById('floor_" + (lev + 1) + "')").style.visibility = "hidden";
+		eval("document.getElementById('sum_" + (lev + 1) + "')").style.visibility = "hidden";
+	};
+	//update_floor(lev);
+}
+//-----------------------------------------------------------------------------------------------------
+
+//TILE FUNCTIONS
+
+//-----------------------------------------------------------------------------------------------------
+//Changes the active tile
+function change_tile(int_n) {
+	var str_out = "";
+	if ((g_tile + int_n) > 0 && (g_tile + int_n) <= g_max_tiles && (g_tile + int_n) <= g_active_tiles) {
+		str_out = (g_tile + int_n) + "";
+		g_tile = g_tile + int_n;
+		while (str_out.length < 3) {
+			str_out = "a" + str_out;
+		}
+		str_out = str_out.replace(/a/g,"&nbsp;")
+		//document.getElementById("tx_num").innerHTML = str_out;
+	}else {
+		alert("Cannot update, tile number outside boundaries (" + g_tile + " of " + g_active_tiles + " active tiles).\nClick \"ADD TILE\" to make a new active tile , maximum is "+ g_max_tiles + ".");
+	};
+	get_lua();
+};
+//Jumps to an active tile
+function jump_tile() {
+	var str_out = "";
+	var str_jump_to = prompt("Which sprite index?");
+	if (isNaN(str_jump_to)){
+		alert("Cannot update, tile number entered by user (" + str_jump_to + ") is not a number.");
+	}else {
+		str_jump_to = parseInt(str_jump_to);
+		if ((str_jump_to) > 0 && (str_jump_to) <= g_max_tiles && (str_jump_to) <= g_active_tiles) {
+			str_out = (str_jump_to) + "";
+			g_tile = str_jump_to;
+			while (str_out.length < 3) {
+				str_out = "a" + str_out;
+			};
+			str_out = str_out.replace(/a/g,"&nbsp;")
+			document.getElementById("tx_num").innerHTML = str_out;
+		}else {
+			alert("Cannot update, tile number outside boundaries (1 to " + g_active_tiles + " active tiles).\nClick \"ADD TILE\" to make a new active tile , maximum is "+ g_max_tiles + ".");
+		};
+		get_lua();
+	};
+};
+//Adds an active tile
+function add_tile() {
+	var str_out = "";
+	if (g_active_tiles + 1 <= g_max_tiles) {
+		g_active_tiles = g_active_tiles + 1;
+		str_out = g_active_tiles + "";
+		while (str_out.length < 3) {
+			str_out = "a" + str_out;
+		}
+		str_out = str_out.replace(/a/g,"&nbsp;")
+		document.getElementById("tx_max").innerHTML = str_out;
+		g_a_tile_info[g_active_tiles - 1] = init_tile();
+		;
+	}else {
+		alert("Cannot add active tile, limit reached.\nMaximum is "+ g_max_tiles + ".");
+	};
+};
+//Deletes the last active tile (will make it delete current tile)
+function delete_tile() {
+	var str_out = "";
+	var a_temp = new Array(g_max_tiles);
+	if (g_active_tiles - 1 >= 1) {
+		if (confirm("This will delete tile " + g_tile + " , continue?")) {
+			for (k = 1; k <= g_active_tiles; k++) {
+				if (k >= g_tile){
+					g_a_tile_info[(k - 1)] = g_a_tile_info[k];
+				}else{
+					g_a_tile_info[(k - 1)] = g_a_tile_info[(k - 1)];
+				};
+			};
+			if (g_tile == 1) {
+				g_tile = 1;
+			}else {
+				change_tile(-1);
+			};
+			g_active_tiles = g_active_tiles - 1;
+			str_out = g_active_tiles + "";
+			while (str_out.length < 3) {
+				str_out = "a" + str_out;
+			}
+			str_out = str_out.replace(/a/g,"&nbsp;")
+			document.getElementById("tx_max").innerHTML = str_out;
+			;
+		};
+	}else {
+		alert("Cannot delete the last tile of the tileset.");
+	};
+	get_lua();
+};
+//Creates a blank tile template
+function init_tile() {
+	var str_init = "";
+	var str_img_name = "";
+	str_init = str_init + '            EditorName = "Blank floor tile",\n';
+	if (g_init == false) {
+		str_img_name = document.f_text.image_name.value;
+	};
+	if ((str_img_name != "") && (str_img_name.indexOf(".") != -1) && (str_img_name.indexOf(".") < str_img_name.length)) {
+		str_init = str_init + '            IsometricImage = png_image("$(extension)/' + str_img_name.substring(0, str_img_name.indexOf(".")) + '/32x40-001.png"),\n';
+	}else {
+		str_init = str_init + '            IsometricImage = png_image("$(extension)/image/32x40-001.png"),\n';
+	};
+	str_init = str_init + '            Shape = [[\n'
+	for (i = 0; i < 11; i++){
+		str_init = str_init + '                0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,\n';
+	}
+	str_init = str_init + '                FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,\n';
+	str_init = str_init + '            ]],\n';
+	str_init = str_init + '            MinimapImage = [[\n';
+	for (j = 0; j < 4; j++){
+		str_init = str_init + '                000000,000000,000000,000000,\n';
+	}
+	str_init = str_init + '            ]],\n';
+	str_init = str_init + '            Tile_Type = 0,\n';
+	str_init = str_init + '            Armour = 10,\n';
+	str_init = str_init + '            TU_Walk = 4,\n';
+	str_init = str_init + '            TU_Fly = 4,\n';
+	str_init = str_init + '            TU_Slide = 4,\n';
+	return(str_init);
+}
+//-----------------------------------------------------------------------------------------------------
+
+//SHAPE EDITING FUNCTIONS
+
+//-----------------------------------------------------------------------------------------------------
+//Initialises the grid
+function draw_grid() {
+    for (k = 0; k < 16; k++) {
+        for (j = 0; j < 16; j++) {
+            document.write('<div id="divj_'+ j + 'k_' + k + '" style="background-color:#FFFFFF; position:absolute;');
+            document.write(' top:' + (390 + 19 * k ) + 'px; left:' + (140 + 19 * j) + 'px;');
+            document.write('border:1px solid #666699; width:18px; height:18px;"><a onclick="set_grid(this, '+ j + ', ' + k + ');return(false);" href="#"><img src="blank.gif" width="18" height="18" border="0"></a></div>');
+        };
+    };
+};
+//Initialises the levels
+function draw_levels() {
+    for (i = 0; i < 12; i++) {
+        document.write('<div id="lvli_'+ i + '" style="background-color:#FFFFFF; position:absolute;');
+        document.write(' top:' + (390 + 17 * (11-i) ) + 'px; left:' + (470) + 'px;');
+        document.write('border:1px solid #666699; width:170px; height:16px;"><a onclick="set_level(' + i + ');return(false);" href="#"><img src="blank.gif" width="170" height="16" border="0"></a></div>');
+    };
+};
+//Changes the active level for Shape
+function set_level(lvl_num){
+    g_lvl = lvl_num;
+    update_levels();
+    update_grid();
+};
+//Changes the information in the Array on click of a grid unit
+function set_grid(id_item, _j, _k) {
+    if (g_bool_square) {
+        if (g_bool_square_set) {
+            x_2 = _j
+            y_2 = _k
+            make_square();
+            g_bool_square_set = false;
+            x_1 = 0;
+            y_1 = 0;
+            x_2 = 0;
+            y_2 = 0;
+        }else {
+            x_1 = _j
+            y_1 = _k
+            g_bool_square_set = true;
+        };
+    };
+    a_tiles[g_lvl][_j][_k] = !a_tiles[g_lvl][_j][_k];
+    update_grid();
+    ;
+};
+//Redraws the grid
+function update_grid() {
+    for (k = 0; k < 16; k++) {
+        for (j = 0; j < 16; j++) {
+            if (a_tiles[g_lvl][j][k]) {
+                document.getElementById('divj_'+ j + 'k_' + k).style.backgroundColor = "#CCCCFF";
+            }else {
+                document.getElementById('divj_'+ j + 'k_' + k).style.backgroundColor = "#FFFFFF";
+            };
+        };
+    };
+};
+//Redraws the levels according
+function update_levels() {
+    for (lv_i = 0; lv_i < 12; lv_i++) {
+        if (lv_i == g_lvl) {
+            document.getElementById('lvli_'+ lv_i).style.backgroundColor = "#CCCCFF";
+        }else {
+            document.getElementById('lvli_'+ lv_i).style.backgroundColor = "#FFFFFF";
+        };
+    };
+};
+//Sets all units in the current level to empty
+function clear_lvl() {
+    if (confirm("Are you sure you want to empty current level ?")) {
+        for (ck = 0; ck < 16; ck++) {
+            for (cj = 0; cj < 16; cj++) {
+                a_tiles[g_lvl][cj][ck] = false;
+            };
+        };
+    };
+    update_grid();
+    ;
+};
+//Sets all empty units to filled and filled units to empty in the current level
+function invert_lvl() {
+    for (ck = 0; ck < 16; ck++) {
+        for (cj = 0; cj < 16; cj++) {
+            a_tiles[g_lvl][cj][ck] = !a_tiles[g_lvl][cj][ck];
+        };
+    };
+    update_grid();
+    ;
+};
+//Activates or deactivates the Shape's Square making tool
+function act_square() {
+    if (g_bool_square) {
+        document.getElementById("bt_square").style.backgroundColor = "#FFFFFF";
+        g_bool_square = false;
+        g_bool_square_set = false;
+        x_1 = 0;
+        y_1 = 0;
+        x_2 = 0;
+        y_2 = 0;
+    }else {
+        document.getElementById("bt_square").style.backgroundColor = "#CCCCFF";
+        g_bool_square = true;
+        g_bool_square_set = false;
+    };
+};
+//Shape's Square making tool
+function make_square() {
+    var j_min = 0;
+    var j_max = 0;
+    var k_min = 0;
+    var k_max = 0;
+    var inv = false;
+    if (x_1 <= x_2) {
+        j_min = x_1;
+        j_max = x_2;
+    }else {
+        j_min = x_2;
+        j_max = x_1;
+    };
+    if (y_1 <= y_2) {
+        k_min = y_1;
+        k_max = y_2;
+    }else {
+        k_min = y_2;
+        k_max = y_1;
+    };
+    for (ok = k_min; ok <=  k_max; ok++) {
+        for (oj = j_min; oj <= j_max; oj++) {
+            if ((oj != x_1 || ok != y_1) && (oj != x_2 || ok != y_2)) {
+            a_tiles[g_lvl][oj][ok] = !a_tiles[g_lvl][oj][ok];
+            };
+        };
+    };
+    update_grid();
+    ;
+};
+//Shape's rotation tool
+function rotate_lvl() {
+	var a_temp = new Array(16);
+	for (i = 0; i < 16; i++) {
+		a_temp[i] = new Array(16);
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_temp[_x][_y] = a_tiles[g_lvl][_y][15-_x];
+		};
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_tiles[g_lvl][_x][_y] = a_temp[_x][_y];
+		};
+	};
+	update_grid();
+    ;
+};
+//Shape's horizontal mirror tool
+function mirror_x_lvl() {
+	var a_temp = new Array(16);
+	for (i = 0; i < 16; i++) {
+		a_temp[i] = new Array(16);
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_temp[_x][_y] = a_tiles[g_lvl][15-_x][_y];
+		};
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_tiles[g_lvl][_x][_y] = a_temp[_x][_y];
+		};
+	};
+	update_grid();
+    ;
+};
+//Shape's vertical mirror tool
+function mirror_y_lvl() {
+	var a_temp = new Array(16);
+	for (i = 0; i < 16; i++) {
+		a_temp[i] = new Array(16);
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_temp[_x][_y] = a_tiles[g_lvl][_x][15-_y];
+		};
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_tiles[g_lvl][_x][_y] = a_temp[_x][_y];
+		};
+	};
+	update_grid();
+    ;
+};
+//makes a predefined shape
+function make_shape(_type) {
+	//Values for each level : x-min, x-max, y-min, y-max
+	var a_bound = new Array(12);
+	for (i = 0; i < 12; i++){
+	a_bound[i] = new Array(4);
+	}
+	//Make boundaries
+	switch (_type) {
+		case 0 :
+			for (j = 1; j < 12; j++){
+				a_bound[j][0] = 16;
+				a_bound[j][1] = 16;
+				a_bound[j][2] = 16;
+				a_bound[j][3] = 16;
+			};
+			a_bound[0][0] = 0;
+			a_bound[0][1] = 0;
+			a_bound[0][2] = 15;
+			a_bound[0][3] = 15;
+			break;
+		case 1 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 1;
+			};
+			break;
+		case 2 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 14;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			break;
+		case 3 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 14;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 1;
+			};
+			break;
+		case 4 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			break;
+		case 5 :
+			for (j = 0; j < 6; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			for (j = 6; j < 12; j++){
+				a_bound[j][0] = 16;
+				a_bound[j][1] = 16;
+				a_bound[j][2] = 16;
+				a_bound[j][3] = 16;
+			};
+			break;
+		case 6 :
+			for (j = 0; j < 6; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			a_bound[0][0] = 1;
+			a_bound[1][0] = 3;
+			a_bound[2][0] = 6;
+			a_bound[3][0] = 9;
+			a_bound[4][0] = 11;
+			a_bound[5][0] = 14;
+			for (j = 6; j < 12; j++){
+				a_bound[j][0] = 16;
+				a_bound[j][1] = 16;
+				a_bound[j][2] = 16;
+				a_bound[j][3] = 16;
+			};
+			break;
+		case 7 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			a_bound[6][0] = 1;
+			a_bound[7][0] = 4;
+			a_bound[8][0] = 7;
+			a_bound[9][0] = 9;
+			a_bound[10][0] = 11;
+			a_bound[11][0] = 14;
+			break;
+		case 8 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			a_bound[6][3] = 14;
+			a_bound[7][3] = 11;
+			a_bound[8][3] = 8;
+			a_bound[9][3] = 6;
+			a_bound[10][3] = 4;
+			a_bound[11][3] = 1;
+			break;
+		case 9 :
+			for (j = 0; j < 6; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			a_bound[0][3] = 14;
+			a_bound[1][3] = 12;
+			a_bound[2][3] = 9;
+			a_bound[3][3] = 6;
+			a_bound[4][3] = 4;
+			a_bound[5][3] = 1;
+			for (j = 6; j < 12; j++){
+				a_bound[j][0] = 16;
+				a_bound[j][1] = 16;
+				a_bound[j][2] = 16;
+				a_bound[j][3] = 16;
+			};
+			break;
+		default :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			break;
+	};
+	//Redraw Shape then clear and affect for each level
+	for (lv = 0; lv < 12; lv++) {
+		for (j = 0; j < 16; j++) {
+			for (k = 0; k < 16; k++) {
+				a_tiles[lv][j][k] = false;
+			};
+		};
+		if (a_bound[lv][0] != 16){
+			for (l = a_bound[lv][0]; l <= a_bound[lv][2]; l++) {
+				for (m = a_bound[lv][1]; m <= a_bound[lv][3]; m++) {
+					a_tiles[lv][l][m] = true;
+				};
+			};
+		};
+	};
+	update_grid();
+    ;
+};
+//-----------------------------------------------------------------------------------------------------
+
+//MINIMAP RELATED FUNCTIONS
+
+//-----------------------------------------------------------------------------------------------------
+//initialises the minimap
+function draw_mini() {
+	for (im = 0; im < 16; im++) {
+		document.write('<div id="divmini_'+ im + '" style="background-color:#000000; position:absolute;');
+		document.write(' top:' + (145 + 6 * Math.floor(im / 4) ) + 'px; left:' + (612 + 6 * (im % 4)) + 'px;');
+		document.write(' width:6px; height:6px;">&nbsp;</div>');
+	};
+};
+//Redraws the minimap
+function update_mini() {
+	var err = false;
+	for (im = 0; im < 16; im++) {
+		a_mini[im] = eval("document.f_text.mini_"+im+".value");
+		if (!a_mini[im].match(/^[a-fA-F0-9]{6}$/)) {
+			err = true;
+		}
+	};
+	if (err) {
+		alert("Error, one minimap value or more is not a valid hex color");
+	}else{
+		show_mini();
+		;
+	};
+};
+
+//Updates the minimap preview
+function show_mini() {
+	for (im = 0; im < 16; im++) {
+		document.getElementById("divmini_"+im).style.backgroundColor = "#" + a_mini[im];
+	};
+};
+//-----------------------------------------------------------------------------------------------------
+
+//IMAGE AND PNG RELATED FUNCTIONS
+
+//-----------------------------------------------------------------------------------------------------
+
+//Updates the sprite preview and the image window
+function update_img() {
+	var str_out = "";
+    var srcf = "";
+    var imgt = new Image();
+    srcf = "file:///" + document.f_text.ext_path.value;
+    srcf = srcf + "\\" + document.f_text.image_name.value;
+    imgt.src = srcf;
+    var sp_Xoffset = 0;
+    var sp_Yoffset = 0;
+    var px_Xoffset = 0;
+    var px_Yoffset = 0;
+    if (isNaN(document.f_text.sprite_num.value)) {
+        alert("Cannot update image, sprite number is not a number");
+    }else {
+        if (document.f_text.sprite_num.value > 0 && document.f_text.sprite_num.value < (Math.floor(((imgt.width * 2) + 2)/66) * Math.floor((imgt.height * 2) + 2)/82)) {
+            sp_Xoffset = (document.f_text.sprite_num.value - 1);
+            px_Xoffset = sp_Xoffset * 66;
+            sp_Yoffset = px_Xoffset / ((imgt.width * 2) + 2);
+            px_Xoffset = px_Xoffset % ((imgt.width * 2) + 2);
+            px_Yoffset = Math.floor(sp_Yoffset) * 82;
+			str_out = '<div style="position:relative; top:-' + px_Yoffset + 'px; left:-' + px_Xoffset + 'px; width:' + (imgt.width * 2) + 'px; height:' + (imgt.height * 2) + 'px;">';
+			str_out = str_out + '<a href="#" onmouseover="document.getElementById(\'img_full\').style.visibility = \'visible\';" onmouseout="document.getElementById(\'img_full\').style.visibility = \'hidden\';">';
+			str_out = str_out + '<img src="' + imgt.src + '" width="' + (imgt.width * 2) + '" height="' + (imgt.height * 2) + '" border="0"></a></div>';
+			document.getElementById("png_sprite").innerHTML = str_out;
+			document.getElementById("img_full").innerHTML = '<img src="' + imgt.src + '" width="' + imgt.width + '" height="' + imgt.height + '" border="0">';
+        	;
+		}else {
+			document.getElementById("png_sprite").innerHTML = 'None';
+			document.getElementById("img_full").innerHTML = '&nbsp;';
+			if (!g_bool_ignore_img_warn) {
+				if (imgt.width == 0) {
+					if (confirm('Warning : Image not found. Please check Extension path and Image path\n\nKnown bug #003 : If you have just changed paths, retry once.\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+						;
+					};
+				}else {
+            		if (confirm('Warning : Cannot update image, sprite number outside image boundaries\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+						;
+					};
+				};
+			}else {
+				;
+			};
+        };
+    };
+};
+//Adds a value to the sprite number, also affects image
+function add_tile_num(int_n) {
+    var imgt = new Image();
+    srcf = "file:///" + document.f_text.ext_path.value;
+    srcf = srcf + "\\" + document.f_text.image_name.value;
+    imgt.src = srcf;
+    if (isNaN(document.f_text.sprite_num.value)) {
+        alert("Cannot update image, sprite number is not a number");
+    }else {
+        if ((parseInt(document.f_text.sprite_num.value) + int_n) > 0 && (parseInt(document.f_text.sprite_num.value) + int_n) < (Math.floor(((imgt.width * 2) + 2)/66) * Math.floor((imgt.height * 2) + 2)/82)) {
+            document.f_text.sprite_num.value = parseInt(document.f_text.sprite_num.value) + int_n;
+        }else {
+            alert("Cannot update image, sprite number outside image boundaries");
+        };
+    };
+    update_img();
+};
+
+//-----------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------
+
+//LUA RELATED - CORE OF APPLICATION
+
+//-----------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------
+function extract_images(_source, _index) {
+	var str_prop = "";
+	var str_name = "";
+	var str_ext = "";
+	var str_num = "";
+	var a_str_num = new Array(8);
+	var a_ret = new Array("name","num");
+	str_prop = get_prop(_source, "IsometricImage", "=", ",");
+	if (str_prop.indexOf("{") != -1){
+		//list
+		str_prop = get_prop(_source, "IsometricImage", "{", "}");
+		str_prop = str_prop.replace(/[\s\r\n\t]/g,"");
+		a_img = str_prop.split(",");
+		str_ext = a_img[0].substring(a_img[0].lastIndexOf('.'),a_img[0].lastIndexOf('"'));
+		str_num = a_img[0].substring(a_img[0].lastIndexOf('-')+1,a_img[0].lastIndexOf('.'));
+		for (i = 0; i < 8; i++) {
+			a_str_num[i] = a_img[i].substring(a_img[i].lastIndexOf('-')+1,a_img[i].lastIndexOf('.'));
+			a_str_num[i] = a_str_num[i].replace(/^0?0?/,"");
+			//eval('document.f_text.img_ani' + (i + 1)).value = a_str_num[i];
+		};
+		if (a_img[0].indexOf('$(extension)') == -1) {
+			str_name = a_img[0].substring(a_img[0].indexOf('"')+1,a_img[0].lastIndexOf('32x40')-1);
+		}else {
+			str_name = a_img[0].substring(a_img[0].indexOf('/')+1,a_img[0].lastIndexOf('32x40')-1);
+		};
+	}else{
+		//single
+		str_prop = str_prop.replace(/[\r\n\t]/g,"");
+		str_ext = str_prop.substring(str_prop.lastIndexOf('.'),str_prop.lastIndexOf('"'));
+		str_num = str_prop.substring(str_prop.lastIndexOf('-')+1,str_prop.lastIndexOf('.'));
+		if (str_prop.indexOf('$(extension)') == -1) {
+			str_name = str_prop.substring(str_prop.indexOf('"')+1,str_prop.lastIndexOf('32x40')-1);
+		}else {
+			str_name = str_prop.substring(str_prop.indexOf('/')+1,str_prop.lastIndexOf('32x40')-1);
+		};
+	};
+	a_ret[0] = str_name + str_ext;
+	a_ret[1] = str_num.replace(/^0?0?/,"");
+	return a_ret[_index];
+};
+//Extracts a select field value
+function extract_prop_numeric(_source, _sfield, _prop, _min, _max, _required, _default) {
+	var str_prop = get_prop(_source, _prop, "=", ",");
+	var err = "";
+	str_prop = str_prop.replace(/\s/g,"");
+	if (!isNaN(str_prop) && str_prop != "") {
+		if ((parseInt(str_prop) >= _min) && (parseInt(str_prop) <= _max)) {
+			_sfield.value = str_prop;
+		}else {
+			if (_required) {
+				err = err + 'Cannot set option : ' + _prop + ' value (' + str_prop + ') outside boundaries (' + _min + ' - ' + _max + ')\nUsing default value';
+				str_prop = _default;
+				_sfield.value = str_prop;
+			}else {
+				err = err + 'Cannot set option : ' + _prop + ' value (' + str_prop + ') outside boundaries (' + _min + ' - ' + _max + ')';
+			}
+		};
+	}else {
+		if (_required) {
+			err = err + _prop + " is required and not a number, using default value";
+			str_prop = _default;
+			_sfield.value = str_prop;
+		};
+	};
+	if (err != "") {
+		alert(err);
+	};
+	return err;
+};
+//Extracts the numeric value and checks the checkbox if set
+function extract_prop_bool_numeric(_source, _ckfield, _txfield, _prop, _min, _max) {
+	var str_prop = get_prop(_source, _prop, "=", ",");
+	var err = "";
+	str_prop = str_prop.replace(/\s/g,"");
+	if (!isNaN(str_prop) && str_prop != "") {
+		if ((parseInt(str_prop) >= _min) && (parseInt(str_prop) <= _max)) {
+			_ckfield.checked = true;
+			_txfield.disabled = false;
+			_txfield.value = str_prop;
+		}else {
+			err = err + 'Cannot set option : ' + _prop + ' value (' + str_prop + ') outside boundaries (' + _min + ' - ' + _max + ')';
+			_ckfield.checked = false;
+			_txfield.disabled = true;
+			_txfield.value = str_prop;
+		};
+	}else {
+		_ckfield.checked = false;
+		_txfield.disabled = true;
+	};
+	if (err != "") {
+		alert(err);
+	};
+	return err;
+};
+//Extracts values for explosives
+function extract_prop_expl(_source, _ckfield, _txfield, _sfield, _prop1, _prop2, _min1, _max1, _min2, _max2) {
+	var str_prop1 = get_prop(_source, _prop1, "=", ",");
+	var str_prop2 = get_prop(_source, _prop2, "=", ",");
+	var err = "";
+	str_prop1 = str_prop1.replace(/\s/g,"");
+	str_prop2 = str_prop2.replace(/\s/g,"");
+	_ckfield.checked = false;
+	_txfield.disabled = true;
+	_sfield.disabled = true;
+	if (!isNaN(str_prop1) && str_prop1 != "") {
+		if ((parseInt(str_prop1) >= _min1) && (parseInt(str_prop1) <= _max1)) {
+			_ckfield.checked = true;
+			_txfield.disabled = false;
+			_txfield.value = str_prop1;
+			_sfield.disabled = false;
+		}else {
+			err = err + 'Cannot set option : ' + _prop1 + ' value (' + str_prop1 + ') outside boundaries (' + _min1 + ' - ' + _max1 + ')';
+			_txfield.value = str_prop;
+		};
+	};
+	if (!isNaN(str_prop2) && str_prop2 != "") {
+		if ((parseInt(str_prop2) >= _min2) && (parseInt(str_prop2) <= _max2)) {
+			_ckfield.checked = true;
+			_txfield.disabled = false;
+			_sfield.disabled = false;
+			_sfield.value = str_prop2;
+		}else {
+			err = err + 'Cannot set option : ' + _prop2 + ' value (' + str_prop2 + ') outside boundaries (' + _min2 + ' - ' + _max2 + ')';
+			_sfield.value = str_prop2;
+		};
+	};
+	if (err != "") {
+		alert(err);
+	};
+	return err;
+};
+//Extracts a boolean value
+function extract_prop_bool(_source, _ckfield, _prop) {
+	var str_prop = get_prop(_source, _prop, "=", ",");
+	var err = "";
+	str_prop = str_prop.replace(/\s/g,"");
+	if(!isNaN(str_prop)) {
+		if (str_prop != "") {
+			if (str_prop == "1") {
+				_ckfield.checked = true;
+			}else {
+				_ckfield.checked = false;
+			};
+		}else {
+			_ckfield.checked = false;
+		};
+	}else {
+		err = err + 'Cannot set option : ' + _prop + ' value (' + str_prop + ') must be 0 or 1';
+	};
+	if (err != "") {
+		alert(err);
+	};
+	return err;
+};
+//Extracts walking values
+function extract_prop_walk(_source, _ckfield, _txwalk, _txfly, _txslide, _propwalk, _propfly, _propslide, _min, _max) {
+	var str_prop_walk = get_prop(_source, _propwalk, "=", ",");
+	var str_prop_fly = get_prop(_source, _propfly, "=", ",");
+	var str_prop_slide = get_prop(_source, _propslide, "=", ",");
+	str_prop_walk = str_prop_walk.replace(/\s/g,"");
+	str_prop_fly = str_prop_fly.replace(/\s/g,"");
+	str_prop_slide = str_prop_slide.replace(/\s/g,"");
+	var err = "";
+	_ckfield.checked = false;
+	_txwalk.disabled = true;
+	_txfly.disabled = true;
+	_txslide.disabled = true;
+	if (!isNaN(str_prop_walk) && str_prop_walk != "") {
+		if ((parseInt(str_prop_walk) < _min) || (parseInt(str_prop_walk) > _max)) {
+			err = err + _propwalk + ' value (' + str_prop_walk + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			_txwalk.value = "-1";
+		}else {
+			_txwalk.value = str_prop_walk;
+			_ckfield.checked = true;
+			_txwalk.disabled = false;
+			_txfly.disabled = false;
+			_txslide.disabled = false;
+		};
+	}else {
+		err = err + _propwalk + ' not defined or not a number\n';
+		_txwalk.value = "-1";
+	};
+	if (!isNaN(str_prop_fly) && str_prop_fly != "") {
+		if ((parseInt(str_prop_fly) < _min) || (parseInt(str_prop_fly) > _max)) {
+			err = err + _propfly + ' value (' + str_prop_fly + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			_txfly.value = "-1";
+		}else {
+			_txfly.value = str_prop_fly;
+			_ckfield.checked = true;
+			_txwalk.disabled = false;
+			_txfly.disabled = false;
+			_txslide.disabled = false;
+		};
+	}else {
+		err = err + _propfly + ' not defined or not a number\n';
+		_txfly.value = "-1";
+	};
+	if (!isNaN(str_prop_slide) && str_prop_slide != "") {
+		if ((parseInt(str_prop_slide) < _min) || (parseInt(str_prop_slide) > _max)) {
+			err = err + _propslide + ' value (' + str_prop_slide + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			_txslide.value = "-1";
+		}else {
+			_txslide.value = str_prop_slide;
+			_ckfield.checked = true;
+			_txwalk.disabled = false;
+			_txfly.disabled = false;
+			_txslide.disabled = false;
+		};
+	}else {
+		err = err + _propslide + ' not defined or not a number\n';
+		_txslide.value = "-1";
+	};
+	if (_txwalk.value == "-1" && _txfly.value == "-1" && _txslide.value == "-1") {
+		_ckfield.checked = false;
+		_txwalk.disabled = true;
+		_txfly.disabled = true;
+		_txslide.disabled = true;
+		_txwalk.value = "4";
+		_txfly.value = "4";
+		_txslide.value = "4";
+	}else {
+		if (err != "") {
+			alert("Warning for Walk, Fly and Slide values,\n" + err + "Using -1 for listed items");
+		};
+	};
+	return err;
+};
+//Returns a LUA property as a string
+function get_prop(str_source, str_prop, str_in, str_out) {
+	//Use array delimiters or ( = and , ) for str_in and str_out
+	var str_return = "";
+	var int_prop_pos = str_source.indexOf(str_prop);
+	var start_pos = str_source.indexOf(str_in,int_prop_pos)+str_in.length;
+	var end_pos = str_source.indexOf(str_out,start_pos);
+	if (int_prop_pos != -1) {
+		str_return = str_source.substring(start_pos,end_pos);
+	}
+	return str_return;
+};
+//Returns a formatted string of property _prop with the value of _txfield
+function opt_get_numeric(_txfield, _prop, _min, _max, _required, _default) {
+	var str_return = "";
+	if (!isNaN(_txfield.value) && _txfield.value != "") {
+		if ((parseInt(_txfield.value) >= _min) && (parseInt(_txfield.value) <= _max)) {
+			str_return = '            ' + _prop + ' = ' + _txfield.value + ',\n';
+		}else {
+			if (_required) {
+				alert('Cannot set option : ' + _prop + ' value (' + _txfield.value + ') outside boundaries (' + _min + ' - ' + _max + ')\nUsing default value');
+				str_return = '            ' + _prop + ' = ' + _default + ',\n';
+				_txfield.value = _default;
+			}else {
+				alert('Cannot set option : ' + _prop + ' value (' + _txfield.value + ') outside boundaries (' + _min + ' - ' + _max + ')');
+			}
+		};
+	}else {
+		if (_required) {
+			alert(_prop + " is required and not a number, using default value");
+			str_return = '            ' + _prop + ' = ' + _default + ',\n';
+		};
+	};
+	return str_return;
+};
+//returns a formatted string of property _prop with the value of _txfield if _ckfield is checked
+function opt_get_bool_numeric(_ckfield, _txfield, _prop, _min, _max) {
+	var str_return = "";
+	if (_ckfield.checked) {
+		if (!isNaN(_txfield.value)) {
+			if ((parseInt(_txfield.value) >= _min) && (parseInt(_txfield.value) <= _max)) {
+				str_return = '            ' + _prop + ' = ' + _txfield.value + ',\n'
+			}else {
+				if (_prop == "Die_MCD") {
+					alert('Cannot add option : ' + _prop + ' value (' + _txfield.value + ') outside boundaries (' + _min + ' - ' + _max + ')\nAdd a tile to push maximum boundary (up to 255)');
+				}else{
+					alert('Cannot add option : ' + _prop + ' value (' + _txfield.value + ') outside boundaries (' + _min + ' - ' + _max + ')');
+				};
+			};
+		}else {
+			alert('Cannot add option : ' + _prop + ' value (' + _txfield.value + ') is not a number');
+		};
+	};
+	return str_return;
+};
+//returns a formatted string of property _prop with the value of 1 if _ckfield is checked
+function opt_get_bool(_ckfield, _prop) {
+	var str_return = "";
+	if (_ckfield.checked) {
+		str_return = '            ' + _prop + ' = ' + 1 + ',\n'
+	};
+	return str_return;
+};
+//returns a formatted string for walking properties, if required and not set, all values are set to 4.
+function opt_get_walk( _ckfield, _txwalk, _txfly, _txslide, _propwalk, _propfly, _propslide, _min, _max) {
+	var str_return = "";
+	var err = "";
+	if (_ckfield.checked) {
+		if (!isNaN(_txwalk.value) && _txwalk.value != "") {
+			if ((parseInt(_txwalk.value) < _min) || (parseInt(_txwalk.value) > _max)) {
+				err = err + _propwalk + ' value (' + _txwalk.value + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			};
+		}else {
+			err = err + _propwalk + ' value (' + _txwalk.value + ') is not a number\n';
+		};
+		if (!isNaN(_txfly.value) && _txfly.value != "") {
+			if ((parseInt(_txfly.value) < _min) || (parseInt(_txfly.value) > _max)) {
+				err = err + _propfly + ' value (' + _txfly.value + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			};
+		}else {
+			err = err + _propfly + ' value (' + _txfly.value + ') is not a number\n';
+		};
+		if (!isNaN(_txslide.value) && _txslide.value != "") {
+			if ((parseInt(_txslide.value) < _min) || (parseInt(_txslide.value) > _max)) {
+				err = err + _propslide + ' value (' + _txslide.value + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			};
+		}else {
+			err = err + _propslide + ' value (' + _txslide.value + ') is not a number\n';
+		};
+		if (err == "") {
+			str_return = '            ' + _propwalk + ' = ' + _txwalk.value + ',\n';
+			str_return = str_return + '            ' + _propfly + ' = ' + _txfly.value + ',\n';
+			str_return = str_return + '            ' + _propslide + ' = ' + _txslide.value + ',\n';
+		}else{
+			alert("Error with Walk, Fly and Slide values,\n" + err + "Using default values")
+			str_return = '            ' + _propwalk + ' = ' + 4 + ',\n';
+			str_return = str_return + '            ' + _propfly + ' = ' + 4 + ',\n';
+			str_return = str_return + '            ' + _propslide + ' = ' + 4 + ',\n';		
+		};
+	};
+	return str_return;
+};
+
+//Loads the whole LUA from input/output dialog and stores it in the g_a_tile_info Array
+function load_lua() {
+	document.getElementById("loading").style.visibility = "visible";
+	//Error and information management
+	var i = 0;
+	var start_pos = 0;
+	var end_pos = 0;
+	var end_trim = 0;
+	var err = "";
+	//Storage string
+	var str_out;
+	var str_lua = document.f_text.lua_text.value;
+	var str_tiles = str_lua;
+	//Information strings
+	var str_setname = "";
+	var str_setauth = "";
+	//Get and format the tileset name
+	str_setname = get_prop(str_lua, 'Name', '"', '"');
+	str_setauth = get_prop(str_lua, 'Author', '"', '"');
+	//while (str_setname.match(/[\r\n\t]/g)) { //Uncomment in case of problem
+	str_setname = str_setname.replace(/[\r\n\t]/g,"");
+	//}
+	if (!str_setname.match(/^[A-Za-z0-9\s_]*$/)) {
+		err = err + "Illegal characters found in tileset name.\nUse letters, digits, spaces and underscores only.\n";
+	};
+	//while (str_setname.match(/[\r\n\t]/g)) { //Uncomment in case of problem
+	str_setauth = str_setauth.replace(/[\r\n\t]/g,"");
+	//}
+	if (!str_setauth.match(/^[A-Za-z0-9\s_\.@\-]*$/)) {
+		err = err + "Illegal characters found in author name and email.\nUse letters, digits, spaces, @, dots, dashes and underscores only.\n";
+	};
+	//Execute loading
+	if (err == "") {
+		document.f_text.set_name.value = str_setname + " tileset, made by " + str_setauth;
+		//str_tiles = str_tiles.replace(/[\r\n\t\s]/g,"");
+		while ((i < g_max_tiles) && (err == "")) {
+			start_pos = str_tiles.indexOf("[" + (i + 1) + "]");
+			end_pos = str_tiles.indexOf("[" + (i + 2) + "]",start_pos);
+			if (start_pos != -1) {
+				if (end_pos == -1) {
+					g_a_tile_info[i] = str_tiles.substring(start_pos,str_tiles.length);
+					//Clean up, add exit point and trim
+					//AddTerrain function might be present, make sure it's cut off
+					if (g_a_tile_info[i].indexOf('AddTerrain') != -1) {
+						g_a_tile_info[i] = g_a_tile_info[i].substring(0,g_a_tile_info[i].indexOf('AddTerrain'));
+					};
+					g_a_tile_info[i] = g_a_tile_info[i].replace(/^\s*\[[0-9]{0,3}]\s*=\s*\{\s*\n?\s*/,"            ");
+					//Looks up if IsometricImage is a list
+					if (g_a_tile_info[i].match(/IsometricImage\s?=\s?\{/)) {
+						end_trim = g_a_tile_info[i].indexOf('}',g_a_tile_info[i].indexOf('}')+1);
+					}else {
+						end_trim = g_a_tile_info[i].indexOf('}')
+					}
+					g_a_tile_info[i] = g_a_tile_info[i].substring(0,end_trim);
+					//should replace trailing spaces
+					g_a_tile_info[i] = g_a_tile_info[i].replace(/\s*$/g,"") + "\n";
+					//End while clause and set general properties
+					g_active_tiles = (i + 1);
+					g_tile = 1;
+					i = g_max_tiles;
+				}else {
+					g_a_tile_info[i] = str_tiles.substring(start_pos,end_pos);
+					//Clean up and trim
+					g_a_tile_info[i] = g_a_tile_info[i].replace(/^\s*\[[0-9]{0,3}]\s*=\s*\{\s*\n?\s*/,"            ");
+					if (g_a_tile_info[i].match(/IsometricImage\s?=\s?\{/)) {
+						end_trim = g_a_tile_info[i].indexOf('}',g_a_tile_info[i].indexOf('}')+1);
+					}else {
+						end_trim = g_a_tile_info[i].indexOf('}')
+					}
+					g_a_tile_info[i] = g_a_tile_info[i].substring(0,end_trim);
+					//should replace trailing spaces
+					g_a_tile_info[i] = g_a_tile_info[i].replace(/\s*$/g,"") + "\n";
+				};
+			}else {
+				err = "Expected tile index [" + (i + 1) + "] not found, cannot load less than one tile.\nTiles must be ordered as 1,2,3,[...],n.";
+			};
+			i = i + 1;
+		};
+		if (err == "") {
+			if (g_active_tiles != 1) {
+				alert('LUA has been loaded successfully\n' + g_active_tiles + ' tiles loaded.');
+			}else {
+				alert('LUA has been loaded successfully\n' + g_active_tiles + ' tile loaded.');
+			}
+		}else {
+			alert('Error : invalid LUA input encountered while loading tile ' + i +'.\n' + err);
+		};
+    }else {
+        alert('Error : invalid LUA input\n' + err);
+    };
+	document.getElementById("loading").style.visibility = "hidden";
+    get_lua();
+};
+//Loads the active tile's LUA from the g_a_tile_info Array
+function get_lua() {
+	var str_lua = g_a_tile_info[(g_tile - 1)];
+	var str_settilename = "";
+	var str_tile = "";
+	var str_minimap = "";
+    var err = "";
+    var hex_num = 0;
+	str_settilename = get_prop(str_lua, 'EditorName', '"', '"');
+	//while (str_settilename.match(/[\r\n\t]/g)) {
+	str_settilename = str_settilename.replace(/[\r\n\t]/g,"");
+	//};
+	if (!str_settilename.match(/^[A-Za-z0-9\s_]*$/)) {
+		err = "Illegal characters found in EditorName , use letters, digits, space and underscore only";
+	};
+	str_tile = get_prop(str_lua, "Shape", "[[", "]]");
+	//while (str_tile.match(/[\r\n\t\s]/g)) {
+	str_tile = str_tile.replace(/[\r\n\t\s]/g,"");
+	//};
+	str_minimap = get_prop(str_lua, "MinimapImage", "[[", "]]");
+	//while (str_minimap.match(/[\r\n\t\s]/g)) {
+	str_minimap = str_minimap.replace(/[\r\n\t\s]/g,"");
+	//};
+    var a_values = str_tile.split(",");
+	var a_minivalues = str_minimap.split(",");
+    if (a_values.length < 192) {
+        err = err + "Unable to load Shape : Wrong number of arguments\n";
+    }else {
+        for (ilua = 0; ilua < 192; ilua++) {
+            if (!a_values[ilua].match(/^[0-9A-Fa-f]{4}$/)){
+                err = err + "Unable to load Shape : Non hexadecimal values found\n";
+            };
+        };
+    };
+	if (a_minivalues.length < 16) {
+		err = err + "Unable to load MinimapImage : Wrong number of arguments\n";
+	}else{
+		for (imini = 0; imini < 16; imini++) {
+            if (!a_minivalues[imini].match(/^[0-9A-Fa-f]{6}$/)){
+				err = err + "Unable to load MinimapImage : Non hexadecimal color values found\n";
+			};
+		};
+	};
+    if (err == "") {
+		extract_images(str_lua);
+		//extract_prop_numeric(str_lua, document.f_text.s_type, "Tile_Type", 0, 3, true, 0);
+		//document.f_text.tx_tile_name.value = str_settilename;
+		/*for (imini = 0; imini < 16; imini++) {
+			a_mini[imini] = a_minivalues[imini];
+		eval("document.f_text.mini_"+imini).value = a_mini[imini];
+		};*/
+        /*for (ilua = 0; ilua < 192; ilua++) {
+            for (it = 0; it < 4; it++) {
+                for (hx = 0; hx < 16; hx++) {
+                    if (a_hex[hx] == a_values[ilua].charAt(it)) {
+                    hex_num = hx;
+                    };
+                };
+                if (hex_num < 8) {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 0)] = false;
+                }else {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 0)] = true;
+                };
+                if (hex_num % 8 < 4) {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 1)] = false;
+                }else {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 1)] = true;
+                };
+                if (hex_num % 4 < 2) {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 2)] = false;
+                }else {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 2)] = true;
+                };
+                if (hex_num % 2 < 1) {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 3)] = false;
+                }else {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 3)] = true;
+                };
+            };
+        };*/
+    }else {
+        alert('Error parsing tile ' + g_tile + ' : invalid LUA input\n' + err + '\nUsing Blank floor tile');
+		g_a_tile_info[(g_tile - 1)] = init_tile();
+    };
+};
+//-----------------------------------------------------------------------------------------------------
+
+//GUI FUNCTIONALITY RELATED
+
+//-----------------------------------------------------------------------------------------------------
+//Shows or hide help window
+function toggle_help() {
+    if (document.getElementById("h_win").style.visibility == "visible") {
+        document.getElementById("h_win").style.visibility = "hidden";
+    	document.getElementById("bt_help").style.backgroundColor = "#FFFFFF";
+    }else {
+        document.getElementById("h_win").style.visibility = "visible";
+        document.getElementById("bt_help").style.backgroundColor = "#CCCCFF";
+    };
+};
+function toggle_lua_dialog() {
+    if (document.getElementById("lua_dialog").style.visibility == "visible") {
+        document.getElementById("lua_dialog").style.visibility = "hidden";
+		document.getElementById("bt_lua_in_out").style.backgroundColor = "#FFFFFF";
+    }else {
+        document.getElementById("lua_dialog").style.visibility = "visible";
+		document.getElementById("bt_lua_in_out").style.backgroundColor = "#CCCCFF";
+    };
+};
+function toggle_map_dialog() {
+    if (document.getElementById("map_dialog").style.visibility == "visible") {
+        document.getElementById("map_dialog").style.visibility = "hidden";
+		document.getElementById("bt_map_in_out").style.backgroundColor = "#FFFFFF";
+    }else {
+        document.getElementById("map_dialog").style.visibility = "visible";
+		document.getElementById("bt_map_in_out").style.backgroundColor = "#CCCCFF";
+    };
+};
+//Switches to enable or disable fields
+function switch_type() {
+	//Main switch, restricts some properties to certain tile types
+	if (document.f_text.s_type.value == "0") {
+		//Tile is Floor
+		document.getElementById("walk_msg").innerHTML = "<strong>Can walk</strong> on floor tile";
+		document.getElementById("walk_note").innerHTML = "(-1 to forbid any action)" 
+		document.f_text.ck_walk.checked = true;
+		document.f_text.ck_grav.disabled = false;
+		document.f_text.ck_door.disabled = true;
+		document.f_text.ck_door.checked = false;
+		document.f_text.ck_ufodoor.disabled = true;
+		document.f_text.ck_ufodoor.checked = false;
+		document.f_text.ck_height.disabled = true;
+		document.f_text.ck_height.checked = false;
+		document.f_text.ck_los.disabled = true;
+		document.f_text.ck_los.checked = false;
+	}else if (document.f_text.s_type.value == "3"){
+		//Tile is Object
+		document.getElementById("walk_msg").innerHTML = "<strong>Can walk</strong> through object";
+		document.getElementById("walk_note").innerHTML = "Adds to total TUs<br>(0 : no TU cost)<br>(-1 to forbid action)<br>...<br>See help for details" 
+		document.f_text.ck_walk.checked = false;
+		document.f_text.ck_grav.disabled = true;
+		document.f_text.ck_grav.checked = false;
+		document.f_text.ck_door.disabled = true;
+		document.f_text.ck_door.checked = false;
+		document.f_text.ck_ufodoor.disabled = true;
+		document.f_text.ck_ufodoor.checked = false;
+		document.f_text.ck_height.disabled = false;		
+		document.f_text.ck_los.disabled = false;
+		document.f_text.ck_los.checked = false;
+	}else {
+		//Tile is Wall
+		document.getElementById("walk_msg").innerHTML = "<strong>Can walk</strong> through wall";
+		document.getElementById("walk_note").innerHTML = "Adds to total TUs<br>(0 : no TU cost)<br>(-1 to forbid action)" 
+		document.f_text.ck_walk.checked = false;
+		document.f_text.ck_grav.disabled = true;
+		document.f_text.ck_grav.checked = false;
+		document.f_text.ck_door.disabled = false;
+		document.f_text.ck_ufodoor.disabled = false;
+		document.f_text.ck_height.disabled = true;
+		document.f_text.ck_height.checked = false;
+		document.f_text.ck_los.disabled = false;
+		document.f_text.ck_los.checked = true;
+	};
+	switch_walk();
+	switch_ufodoor();
+	switch_door();
+	switch_height();
+};
+
+function switch_walk() {
+    if (document.f_text.ck_walk.checked) {
+        document.f_text.tx_tusw.disabled = false;
+		document.f_text.tx_tusf.disabled = false;
+		document.f_text.tx_tuss.disabled = false;
+    }else {
+        document.f_text.tx_tusw.disabled = true;
+		document.f_text.tx_tusf.disabled = true;
+		document.f_text.tx_tuss.disabled = true;
+    };
+};
+function switch_burn() {
+    if (document.f_text.ck_burn.checked) {
+        document.f_text.tx_burn.disabled = false;
+    }else {
+        document.f_text.tx_burn.disabled = true;
+    };
+};
+function switch_expl() {
+    if (document.f_text.ck_expl.checked) {
+        document.f_text.tx_expl.disabled = false;
+		document.f_text.s_expl.disabled = false;
+    }else {
+        document.f_text.tx_expl.disabled = true;
+		document.f_text.s_expl.disabled = true;
+    };
+};
+function switch_dest() {
+    if (document.f_text.ck_dest.checked) {
+        document.f_text.tx_dest.disabled = false;
+    }else {
+        document.f_text.tx_dest.disabled = true;
+    };
+};
+function switch_ufodoor() {
+    if (document.f_text.ck_ufodoor.checked) {
+		document.f_text.ck_door.checked = "";
+		document.f_text.tx_door.disabled = true;
+        document.f_text.tx_ufodoor.disabled = false;
+    }else {
+        document.f_text.tx_ufodoor.disabled = true;
+    };
+};
+function switch_door() {
+    if (document.f_text.ck_door.checked) {
+		document.f_text.ck_ufodoor.checked = "";
+		document.f_text.tx_ufodoor.disabled = true;
+        document.f_text.tx_door.disabled = false;
+    }else {
+        document.f_text.tx_door.disabled = true;
+    };
+};
+function switch_light() {
+    if (document.f_text.ck_light.checked) {
+        document.f_text.tx_light.disabled = false;
+    }else {
+        document.f_text.tx_light.disabled = true;
+    };
+};
+function switch_light_s() {
+    if (document.f_text.ck_light_s.checked) {
+        document.f_text.tx_light_s.disabled = false;
+    }else {
+        document.f_text.tx_light_s.disabled = true;
+    };
+};
+function switch_height() {
+    if (document.f_text.ck_height.checked) {
+        document.f_text.s_height.disabled = false;
+    }else {
+        document.f_text.s_height.disabled = true;
+    };
+};
+function switch_pheight() {
+    if (document.f_text.ck_pheight.checked) {
+        document.f_text.tx_pheight.disabled = false;
+    }else {
+        document.f_text.tx_pheight.disabled = true;
+    };
+};
+function switch_heblock() {
+    if (document.f_text.ck_heblock.checked) {
+        document.f_text.tx_heblock.disabled = false;
+    }else {
+        document.f_text.tx_heblock.disabled = true;
+    };
+};
+function switch_foot() {
+    if (document.f_text.ck_foot.checked) {
+        document.f_text.tx_foot.disabled = false;
+    }else {
+        document.f_text.tx_foot.disabled = true;
+    };
+};
+function switch_Flammable() {
+    if (document.f_text.ck_Flammable.checked) {
+        document.f_text.tx_Flammable.disabled = false;
+    }else {
+        document.f_text.tx_Flammable.disabled = true;
+    };
+};
+function switch_Target_Type() {
+    if (document.f_text.ck_Target_Type.checked) {
+        document.f_text.tx_Target_Type.disabled = false;
+    }else {
+        document.f_text.tx_Target_Type.disabled = true;
+    };
+};
+function switch_Smoke_Blockage() {
+    if (document.f_text.ck_Smoke_Blockage.checked) {
+        document.f_text.tx_Smoke_Blockage.disabled = false;
+    }else {
+        document.f_text.tx_Smoke_Blockage.disabled = true;
+    };
+};
+function switch_anim() {
+    if (document.f_text.ck_anim.checked) {
+		for (i = 1; i <= 8; i++) {
+        	eval('document.f_text.img_ani'+i).disabled = false;
+		};
+		document.f_text.sprite_num.disabled = true;
+    }else {
+		for (i = 1; i <= 8; i++) {
+        	eval('document.f_text.img_ani'+i).disabled = true;
+		};
+		document.f_text.sprite_num.disabled = false;
+    };
+};
+function switch_img_warn() {
+    if (document.f_text.ck_img_warn.checked) {
+        g_bool_ignore_img_warn = true;
+    }else {
+        g_bool_ignore_img_warn = false;
+    };
+};
+
+//-----------------------------Switches
+function switch_tileset(_div) {
+	var a_cat_tiles = new Array(255);
+	for (j=0;j<=255;j++) {
+		a_cat_tiles[j] = new Array("",0);
+	};
+	var a_cat_tiles_cursor = 0;
+	var tiletype = 0;
+	var str_list = "";
+	
+	str_list = '<div style="position:relative; top:-0px; left:-0px; width:64px; height:80px;">';
+	str_list = str_list + '<a href="#" onclick="assign_tile(0);return(false);">';
+	str_list = str_list + '<img src="empty.gif" width="64" height="80" border="0"></a></div>';
+    str_list = '<div style="width:64px;height:80px;border:1px solid #000000;margin:0px 1px 1px 0px;overflow:hidden;float:left;">' + str_list + '</div>';
+		
+	var a_currtile = new Array("ext","num")
+	document.getElementById("floor").style.visibility = "hidden";
+	document.getElementById("left_wall").style.visibility = "hidden";
+	document.getElementById("right_wall").style.visibility = "hidden";
+	document.getElementById("object").style.visibility = "hidden";
+	document.getElementById(_div).style.visibility = "visible";
+	switch(_div) {
+		case 'floor' :
+		tiletype = 0
+		g_tile_type=0;
+		break;
+		case 'left_wall' :
+		tiletype = 1
+		g_tile_type=1;
+		break;
+		case 'right_wall' :
+		tiletype = 2
+		g_tile_type=2;
+		break;
+		case 'object' :
+		tiletype = 3
+		g_tile_type=3;
+		break;
+	};
+	for (i=0;i<(g_active_tiles);i++){
+		var str_lua = g_a_tile_info[i];
+		if (get_prop(str_lua, 'Tile_Type', '=', ',') == tiletype) {
+			a_cat_tiles[a_cat_tiles_cursor][0] = str_lua;
+			a_cat_tiles[a_cat_tiles_cursor][1] = i + 1;
+			a_cat_tiles_cursor = a_cat_tiles_cursor + 1;
+		}
+	}
+	for (k=0;k<=a_cat_tiles_cursor;k++) {
+		a_currtile[0] = extract_images(a_cat_tiles[k][0], 0);
+		a_currtile[1] = extract_images(a_cat_tiles[k][0], 1);
+	//str_list = str_list + '<img src="file:///' + document.f_text.ext_path.value + '\\' + a_currtile[0] +'" width="64" height="80" style="border:1px solid #000000; padding:1px; margin:1px;">'
+	str_list = str_list + get_tile_img(a_currtile[0], a_currtile[1], a_cat_tiles[k][1]);
+	}
+
+	document.getElementById(_div).innerHTML = str_list;
+	update_map();
+}
+
+//
+//Updates the sprite preview and the image window
+function get_tile_img(_image, _offset, _tile_id) {
+	var str_out = "";
+    var srcf = "";
+    var imgt = new Image();
+    srcf = "file:///" + document.f_text.ext_path.value;
+    srcf = srcf + "\\" + _image;
+    imgt.src = srcf;
+    var sp_Xoffset = 0;
+    var sp_Yoffset = 0;
+    var px_Xoffset = 0;
+    var px_Yoffset = 0;
+    if (isNaN(_offset)) {
+        alert("Cannot update image, sprite number is not a number");
+    }else {
+        if ( _offset > 0 && _offset < (Math.floor(((imgt.width * 2) + 2)/66) * Math.floor((imgt.height * 2) + 2)/82)) {
+            sp_Xoffset = ( _offset - 1);
+            px_Xoffset = sp_Xoffset * 66;
+            sp_Yoffset = px_Xoffset / ((imgt.width * 2) + 2);
+            px_Xoffset = px_Xoffset % ((imgt.width * 2) + 2);
+            px_Yoffset = Math.floor(sp_Yoffset) * 82;
+			str_out = '<div style="position:relative; top:-' + px_Yoffset + 'px; left:-' + px_Xoffset + 'px; width:' + (imgt.width * 2) + 'px; height:' + (imgt.height * 2) + 'px;">';
+			str_out = str_out + '<a href="#" onclick="assign_tile(' + _tile_id + ');return(false);">';
+			str_out = str_out + '<img src="' + imgt.src + '" width="' + (imgt.width * 2) + '" height="' + (imgt.height * 2) + '" border="0"></a></div>';
+        	str_out = '<div style="width:64px;height:80px;border:1px solid #000000;margin:0px 1px 1px 0px;overflow:hidden;float:left;">' + str_out + '</div>';
+		}else {
+			str_out = '&nbsp;';
+			if (!g_bool_ignore_img_warn) {
+				if (imgt.width == 0) {
+					if (confirm('Warning : Image not found. Please check Extension path and Image path\n\nKnown bug #003 : If you have just changed paths, retry once.\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+						;
+					};
+				}else {
+            		if (confirm('Warning : Cannot update image, sprite number outside image boundaries\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+						;
+					};
+				};
+			}else {
+				;
+			};
+        };
+    };
+	return str_out;
+};
+
+function get_small_tile_img(_image, _offset) {
+	var str_out = "";
+    var srcf = "";
+    var imgt = new Image();
+    srcf = "file:///" + document.f_text.ext_path.value;
+    srcf = srcf + "\\" + _image;
+    imgt.src = srcf;
+    var sp_Xoffset = 0;
+    var sp_Yoffset = 0;
+    var px_Xoffset = 0;
+    var px_Yoffset = 0;
+    if (isNaN(_offset)) {
+        alert("Cannot update image, sprite number is not a number");
+    }else {
+        if ( _offset > 0 && _offset < (Math.floor(((imgt.width) + 1)/33) * Math.floor((imgt.height) + 1)/41)) {
+            sp_Xoffset = ( _offset - 1);
+            px_Xoffset = sp_Xoffset * 33;
+            sp_Yoffset = px_Xoffset / ((imgt.width) + 1);
+            px_Xoffset = px_Xoffset % ((imgt.width) + 1);
+            px_Yoffset = Math.floor(sp_Yoffset) * 41;
+			str_out = '<div style="position:relative; top:-' + px_Yoffset + 'px; left:-' + px_Xoffset + 'px; width:' + (imgt.width) + 'px; height:' + (imgt.height) + 'px;">';
+			str_out = str_out + '<img src="' + imgt.src + '" width="' + (imgt.width) + '" height="' + (imgt.height) + '" border="0"></div>';
+		}else {
+			str_out = '&nbsp;';
+			if (!g_bool_ignore_img_warn) {
+				if (imgt.width == 0) {
+					if (confirm('Warning : Image not found. Please check Extension path and Image path\n\nKnown bug #003 : If you have just changed paths, retry once.\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+						;
+					};
+				}else {
+            		if (confirm('Warning : Cannot update image, sprite number outside image boundaries\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+						;
+					};
+				};
+			}else {
+				;
+			};
+        };
+    };
+	return str_out;
+};
+//
+function assign_tile(_num) {
+//g_sel[0 : level, 1 : i, 2 : j]
+var a_tile_img_info = new Array(2)
+var str_lua = ""
+	if (g_sel[0] != -1 && g_sel[1] != -1 && g_sel[2] != -1) {
+
+		g_map_data[g_sel[0]][g_sel[2]][g_sel[1]][g_tile_type] = _num;
+		//str_out = str_out + '<div id="sprite_' + typ + '_' + lev + '_' + (i) + '_' + ((g_height * 10) - 1 - j) + '_floor" style="width:32px; height:40px; position:absolute; bottom:0px; left:0px; overflow:hidden;">';
+		//str_out = str_out + '<img style="position:absolute; bottom:0px; left:0px;" src="test_'+typ+'.png" width="32" height="40"></div>';
+		//str_out = str_out + '<img style="position:relative; bottom:0px; left:0px;" src="blank.gif" width="32" height="40"></div>';
+		if(_num == 0) {
+			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_height * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_0').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="40">';
+			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_height * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_1').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="blank.gif" width="32" height="16">';	
+		}else {
+			str_lua = g_a_tile_info[_num - 1];
+			a_tile_img_info[0] = extract_images(str_lua, 0);
+			a_tile_img_info[1] = extract_images(str_lua, 1);
+			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_height * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_0').innerHTML = get_small_tile_img(a_tile_img_info[0],a_tile_img_info[1])
+			document.getElementById('sprite_' + g_tile_type + '_' + g_sel[0] + '_' + ((g_height * 10) - 1 - g_sel[2]) + '_' + g_sel[1] + '_1').innerHTML = '<img style="position:absolute; bottom:0px; left:0px;" src="set_'+g_tile_type+'.gif" width="32" height="16">'
+		}
+		update_map();
+	}else {
+		alert("Please select a tile on the map.")
+	}
+};
+function update_map() {
+	str_map_dialog = "" + int_to_hex(g_width * 10) + " " + int_to_hex(g_height * 10) + " " + int_to_hex(g_levels)+ " ";
+	for (xx_l=0; xx_l < g_levels; xx_l++) {
+		for (xx_i=0; xx_i < g_width * 10; xx_i++) {
+			for (xx_j=0; xx_j < g_height * 10; xx_j++) {
+				str_map_dialog = str_map_dialog + int_to_hex(g_map_data[g_levels - 1 - xx_l][xx_i][xx_j][0]) + " ";
+				str_map_dialog = str_map_dialog + int_to_hex(g_map_data[g_levels - 1 - xx_l][xx_i][xx_j][1]) + " ";
+				str_map_dialog = str_map_dialog + int_to_hex(g_map_data[g_levels - 1 - xx_l][xx_i][xx_j][2]) + " ";
+				str_map_dialog = str_map_dialog + int_to_hex(g_map_data[g_levels - 1 - xx_l][xx_i][xx_j][3]) + " ";
+			}
+		}	
+	}
+	document.f_text.map_text.value = str_map_dialog
+}
+function load_map() {
+	document.getElementById("updating").style.visibility = "visible";
+	var str_map_hex = document.f_text.map_text.value;
+	var int_x = hex_to_int(str_map_hex.substring(0,2));
+	var int_y = hex_to_int(str_map_hex.substring(3,5));
+	var int_z = hex_to_int(str_map_hex.substring(6,8));
+	//Restore globals
+	g_levels = int_z;
+	g_width = int_x / 10;
+	g_height = int_y / 10;
+	document.f_text.tx_w.value = g_width;
+	document.f_text.tx_h.value = g_height;
+	document.f_text.tx_lv.value = g_levels;
+	scale_mapview();
+	//Initialise the cursor
+	var cursor = 0;
+	str_map_hex = str_map_hex.substr(9);
+	a_mapdata = str_map_hex.split(" ");
+	//index 0 to dimension + 1 ( dimension + 1 is empty)
+	for (xx_l=0; xx_l < g_levels; xx_l++) {
+		for (xx_i=0; xx_i < g_width * 10; xx_i++) {
+			for (xx_j=0; xx_j < g_height * 10; xx_j++) {
+				g_map_data[g_levels - 1 - xx_l][xx_i][xx_j][0] = hex_to_int(a_mapdata[cursor]);
+				g_map_data[g_levels - 1 - xx_l][xx_i][xx_j][1] = hex_to_int(a_mapdata[cursor + 1]);
+				g_map_data[g_levels - 1 - xx_l][xx_i][xx_j][2] = hex_to_int(a_mapdata[cursor + 2]);
+				g_map_data[g_levels - 1 - xx_l][xx_i][xx_j][3] = hex_to_int(a_mapdata[cursor + 3]);
+				cursor = cursor + 4;
+			}
+		}	
+	}
+	for (xx_l=0; xx_l < g_levels; xx_l++) {
+		make_floor(xx_l);
+	}
+	update_map();
+	change_floor(0);
+	document.getElementById("updating").style.visibility = "hidden";
+}
+//-->
+</script>  
+</head>
+
+<body>
+<div id="bt_square" class="button" style="top:147px;"><a onclick="change_floor(1);return(false);" href="#"><strong>UP</strong></a></div>
+<div id="bt_invert" class="button" style="top:177px;"><a onclick="change_floor(-1);return(false);" href="#"><strong>DOWN</strong></a></div>
+<div id="bt_invert" class="button" style="top:217px;"><a onclick="switch_mode(1);return(false);" href="#"><strong>EDIT MODE</strong></a></div>
+<div id="bt_invert" class="button" style="top:247px;"><a onclick="switch_mode(0);return(false);" href="#"><strong>VIEW MODE </strong></a></div>
+<div id="bt_invert" class="f_button" style="left:40px;"><a onclick="switch_tileset('floor');return(false);" href="#"><strong>floor</strong></a></div>
+<div id="bt_invert" class="f_button" style="left:120px;"><a onclick="switch_tileset('left_wall');return(false);" href="#"><strong>L wall</strong></a></div>
+<div id="bt_invert" class="f_button" style="left:200px;"><a onclick="switch_tileset('right_wall');return(false);" href="#"><strong>R wall</strong></a></div>
+<div id="bt_invert" class="f_button" style="left:280px;"><a onclick="switch_tileset('object');return(false);" href="#"><strong>Object</strong></a></div>
+<div id="object" class="tile_list">
+<img src="empty.gif" width="64" height="80" style="border:1px solid #000000; padding:1px; margin:1px;">
+</div>
+<div id="right_wall" class="tile_list">
+<img src="empty.gif" width="64" height="80" style="border:1px solid #000000; padding:1px; margin:1px;">
+</div>
+<div id="left_wall" class="tile_list">
+<img src="empty.gif" width="64" height="80" style="border:1px solid #000000; padding:1px; margin:1px;">
+</div>
+<div id="floor" class="tile_list">
+<img src="empty.gif" width="64" height="80" style="border:1px solid #000000; padding:1px; margin:1px;">
+</div>
+<br>
+<form action="" method="get" name="f_text" id="f_text">
+<div style="position:absolute; top:15px; left:40px;">
+<strong>MAIN SETTINGS</strong>
+<table border="0" cellspacing="0" cellpadding="3">
+  <tr>
+    <td>Current Extension path :
+      <br>
+      <input name="ext_path" type="text" value="C:\Program Files\UFO2000 Beta\extensions\folder-name" size="80"><br></td>
+    <td>Tileset name :<br>
+      <input name="set_name" type="text" value="New tile set" size="20" onchange="" disabled></td>
+	<td>Author (- email) : <br>
+      <input name="tx_auth" type="text" value="Author name - email" size="40" onchange="" disabled></td>
+  </tr>
+</table>
+</div>
+<div style="position:absolute; top:128px; left:40px; width:163px;"><strong>AVAILABLE TILES </strong></div>
+<div id="grid_legend" style="position:absolute; top:128px; left:473px; width:126px;"><strong>MAP GRID </strong> View mode</div>
+<div id="floor_legend" style="position:absolute; top:128px; left:601px; width:74px;">- Floor 1</div>
+<div id="mapview" style="position:absolute; top:147px; left:473px; width:640px; border:1px solid #666699; background-image:url('grid.gif'); background-position:bottom left; background-repeat:repeat; height: 384px;">
+<div id="workarea" style="width:100%; height: 100%;">
+<div style="position:absolute; bottom:0px; left:160px;"><img src="active_grid.gif"></div>
+</div>
+<div id="lv_1" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="sel_1" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="sum_1" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="floor_1" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="usel_1" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="lv_2" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="sel_2" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="sum_2" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="floor_2" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="usel_2" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="lv_3" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="sel_3" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="sum_3" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="floor_3" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="usel_3" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="lv_4" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="sel_4" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="sum_4" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="floor_4" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>
+<div id="usel_4" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:304px;"></div>
+</div>  
+<div id="edit_all" style="width:100%; height: 100%; visibility:visible;">
+<div style="position:absolute; bottom:0px; left:0px;"><img src="blank.gif" name="selector" width="320" height="240" border="0" usemap="#Map" id="selector">
+  <map name="Map" id="Map">
+  </map>
+</div>
+</div>
+</div>
+<div style="position:absolute; top:69px; left:40px; width:524px;">
+<strong>MAP PROPERTIES</strong> Making map files larger than 2x2x4 is not recommended
+<table border="0" cellpadding="4" cellspacing="0">
+  <tr>
+    <td><strong>Height</strong></td>
+    <td><input name="tx_h" type="text" id="tx_h2" value="1" size="4" maxlength="2" onChange=""></td>
+    <td valign="middle">x 10
+      <div id="walk_note"></div></td>
+    <td valign="middle"><strong>Width</strong></td>
+    <td valign="middle">      <input name="tx_w" type="text" id="tx_w" value="1" size="4" maxlength="2" onChange=""></td>
+    <td valign="middle">x 10</td>
+    <td valign="middle">Total levels</td>
+    <td valign="middle"><input name="tx_lv" type="text" id="tx_lv" value="1" size="4" maxlength="2" onChange=""></td>
+    <td valign="middle"><div id="bt_image" style="width:100px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="scale_mapview();return(false);" href="#"><strong>UPDATE MAP </strong></a></div></td>
+  </tr>
+</table>
+</div>
+<script language="JavaScript">
+<!--
+//Initialise divs
+//draw_grid();
+//draw_levels();
+//draw_mini();
+//-->
+</script>
+<!-- Divs that show on top, must be placed after the javascript div creation calls -->
+<div id="img_full" style="position:absolute; top:10px; left:115px; border:3px solid #666699; overflow:visible; background-color:#EEEEEE; visibility:hidden; padding:10px;">&nbsp;</div>
+<div id="lua_dialog" style="position:absolute; top:15px; left:10px; padding:20px 20px 180px 28px; width:1030px; border:1px solid #666699; background-color: #EEEEEE; visibility: hidden;">
+      <strong>LUA INPUT/OUTPUT</strong><br>
+		This window updates automatically.<br><br>
+      <strong>Saving :</strong> Copy the following LUA code and paste it in a .lua file to save your tileset.<br>
+      <strong>Loading :</strong> Erase the current dialog contents, copy your existing LUA code and paste it in the dialog, then press the "LOAD TILESET" button to load a tileset in the editor.<br>
+      <strong>Editing :</strong> (Advanced users only) Edit manually the LUA file from this dialog, press LOAD TILESET to update the tileset in the editor. Be very careful on syntax. <br>
+	  <div id="bt_load" style="width:100px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="load_lua();;change_tile(0);return(false);" href="#"><strong>LOAD TILESET</strong></a></div>
+<br>
+
+<textarea style="background-color:#FFFFFF; font-size:12px;" name="lua_text" id="lua_text" cols="140" rows="40"></textarea>
+</div>
+<div id="map_dialog" style="position:absolute; top:15px; left:10px; padding:20px 20px 180px 28px; width:1030px; border:1px solid #666699; background-color: #EEEEEE; visibility: hidden;">
+      <strong>MAP INPUT/OUTPUT</strong><br>
+		This window updates automatically.<br><br>
+      <strong>Saving :</strong> Copy the following HEX code and paste it as a .map file in any hex editor to save your map.<br>
+      <strong>Loading :</strong> Erase the current dialog contents, copy your existing MAP's HEX code and paste it in the dialog, then press the "LOAD MAP" button to load a map in the editor.<br>
+      <strong>Editing :</strong> (Not recommended) Edit manually the MAP file from this dialog, press LOAD MAP to update the map in the editor. Be very careful. <br>
+	  <div id="bt_load_map" style="width:100px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="load_map();return(false);" href="#"><strong>LOAD MAP</strong></a></div>
+<br>
+
+<textarea style="background-color:#FFFFFF; font-size:12px;" name="map_text" id="map_text" cols="143" rows="40"></textarea>
+</div>
+</form>
+<div id="bt_help" class="button" style="top:10px; left:1000px; background-color:#CCCCFF;"><a onclick="toggle_help();return(false);"  href="#"><strong>HELP</strong></a></div>
+<div id="bt_lua_in_out" class="lua_button" style="top:10px; left:600px; background-color:#FFFFFF;"><a onclick="toggle_lua_dialog();return(false);" href="#"><strong>LUA INPUT / OUTPUT DIALOG</strong></a></div>
+<div id="bt_map_in_out" class="lua_button" style="top:10px; left:800px; background-color:#FFFFFF;"><a onclick="toggle_map_dialog();return(false);" href="#"><strong>MAP INPUT / OUTPUT DIALOG</strong></a></div>
+<div id="h_win" style="position:absolute; top:30px; left:026px; width:1024px; height:725px; overflow:auto; padding:5px 12px 5px 12px; border:1px solid #666699; background-color:#EEEEFF; visibility:visible;">
+  <p><strong>Nachtwolf's map editor, version 1.0</strong></p>
+  <p><strong>HOW TO USE THIS TOOL</strong></p>
+<p><strong>1. Getting started<br>
+  </strong><br>
+  Download an HEX editor, I personnally recommend <a href="http://www.chmaas.handshake.de/delphi/freeware/xvi32/xvi32.htm#download">XVI32<br>
+  </a>Have a completed LUA tileset ready, it should be composed of only ONE tile list from [1] to the last in the tileset<br>
+  Make sure this tileset doesn't use &quot;blanks&quot;, the &quot;blanks&quot; are not supported yet. <br>
+  Start the map editor.<br>
+  <u>MAKE SURE YOU DON'T HIT REFRESH</u> : The map editor is web-based, that means it will reset if you refresh the page. </p>
+<p><strong>2. Setup Main Settings<br>
+  </strong><u><br>
+  STEP 1 Current Extension path</u> : the folder where the PNG images of the tileset you want to modify are located.<br>
+  <u>STEP 2 Tileset lua </u> : Open the LUA INPUT / OUTPUT DIALOG and copy paste your tileset's lua in the textfield, then load the said LUA.<br>
+  <u>STEP 3 Map initialisation :</u> Open the MAP INPUT / OUTPUT DIALOG and load the map (pasting from the hex editor or leaving as is) <u><br>
+  STEP 4  Tiles choice :</u>Select the type of tiles you want to start editing with, ie floor. Click twice if nothing happens. <br>
+    <br>
+    (I.E. Tileset uses the image file &quot;europa.png&quot; which is located at C:\UFO2000 Beta\extensions\terrain-europa\europa.png : Main Setting would then read &quot;C:\UFO2000 Beta\extensions\terrain-europa&quot; as 
+      
+
+   Current Extension path.<br>
+    <br>
+    <strong>3. Importing / start from scratch<br>
+    </strong><br>
+    If you have an existing .map file you wish to work from you need XVI32 or another Hex editor.<br> 
+    Select the whole hex source and copy it as an hex string (With XVI32 : Select with shift and arrow keys, then Edit / Clipboard / Copy as hex string)<br>
+    Open the MAP INPUT / OUTPUT DIALOG, paste the hex string. <br>
+    Follow the instructions for Loading, then close the dialog.<br>
+    <br>
+  If you prefer starting from scratch then you can set the dimensions to resize your map, reload from the MAP INPUT / OUTPUT DIALOG and start from there. </p>
+<p><strong>4. Saving</strong></p>
+<p>To save to .map you need XVI32 or another Hex editor. <br>
+  First, copy the hex string you find in the MAP INPUT / OUTPUT DIALOG. Then open your hex editor and make a new blank file.<br>
+  Then insert the copied string as an hex string (With XVI32 : Edit / insert string / Hex string &gt; PASTE &gt; OK)<br>
+  Save the file with the filename you wish at the .map extension. ie house.map</p>
+<p><strong>5.  Edit mode </strong><br>
+    <br>
+    In this mode, you see a summary image of what is found on this tile. <br>
+    Yellow square means the ground is set.<br>
+    Green circle means an object is set.<br>
+    White lines on either sides means that either walls are set. </p>
+<p><strong>6. View mode</strong></p>
+<p>This mode is WYSIWYG, which means you see the changes as you make them and you see the actual ingame look. </p>
+<p><strong>FIXES</strong></p>
+<p><strong>No fixes yet </strong></p>
+<p><strong>KNOWN ISSUES<br>
+  <br>
+  Issue #001 : Adding a quick key to fill a level with said tile.<br>
+  Issue #002 : Map gets reset if you resize it.<br>
+  Issue #003 : Code gets laggy when the map size increases.<br>
+</strong><br>
+  If you encounter a bug, or have ideas for new features, please contact merc_graphics@hotmail.com.<br>
+  <br>
+  <strong>CREDITS </strong><br>
+  This javascript map tool for UFO2000 map making has been designed and programmed by Nachtwolf (Vincent), email: merc_graphics@hotmail.com<br>
+  <br>
+  Many thanks to Hobbes and Sporb for suggestions and bug reports.</p>
+<p><strong><a href="#" onclick="toggle_help();">Click to close help window </a></strong></p>
+</div>
+<div id="loading" style="position:absolute; top:250px; left:80px; border:3px solid #666699; overflow:visible; background-color:#FFFFFF; visibility:hidden; padding:50px; width:800px; font-weight:bold;">
+  <div align="center" class="style2">Loading, please wait...</div>
+</div>
+<div id="updating" style="position:absolute; top:250px; left:80px; border:3px solid #666699; overflow:visible; background-color:#FFFFFF; visibility:hidden; padding:50px; width:800px; font-weight:bold;">
+  <div align="center" class="style2">Updating map, please wait...</div>
+  <div align="center">You will not see anything until calculations are over...<br>
+    Script<span class="style3"> will be irresponsive </span>until those calculations are done. </div>
+</div>
+<script type="text/javascript">
+<!--
+//Initialise application
+scale_mapview();
+//Corrects a little bugs with selection fields disabled property and selected related variables.
+switch_tileset('floor');
+//-->
+</script>
+</body>
+</html>
