@@ -1,0 +1,1874 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<title>UFO2000 Tileset editor, by Nachtwolf</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+body,td,th,a {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    color: #003366;
+	text-decoration:none;
+}
+body {
+    background-color: #EEEEEE;
+}
+input,select,option {
+	font-family:"Courier New", Courier, mono;
+	font-size: 12px;
+}
+.button {
+    position:absolute;
+	left:40px;
+    padding:0px;
+    border:1px solid #666699;
+    background-color:#FFFFFF;
+}
+.button a {
+	display:block;
+    padding:2px;
+	width:70px;
+	color: #003366;
+	text-decoration:none;
+}
+.lua_button {
+    position:absolute;
+	left:40px;
+    padding:0px;
+    border:1px solid #666699;
+    background-color:#FFFFFF;
+}
+.lua_button a {
+	display:block;
+    padding:2px;
+	width:180px;
+	color: #003366;
+	text-decoration:none;
+}
+.sm_button {
+    position:absolute;
+    text-align:center;
+    top:172px;
+    padding:0px;
+    border:1px solid #666699;
+    background-color:#FFFFFF;
+}
+.sm_button a {
+	display:block;
+    padding:2px;
+	width:20px;
+	color: #003366;
+	text-decoration:none;
+}
+.nav {
+    position:absolute;
+    text-align:center;
+    top:25px;
+    border:1px solid #666699;
+    background-color:#FFFFFF;
+}
+.nav a{
+	display:block;
+    padding:2px;
+	width:55px;
+	color: #003366;
+	text-decoration:none;
+}
+a:visited {
+    color: #003366;
+	text-decoration:none;
+}
+a:hover {
+    color: #003366;
+	text-decoration:underline;
+}
+a:active {
+    color: #3366FF;
+	text-decoration:underline;
+}
+#tx_num, #tx_max {
+	font-family:"Courier New", Courier, mono;
+    font-size: 16px;
+	font-weight:bold;
+    color: #003366;
+	padding:2px;
+}
+#tx_max {
+	font-size: 12px;
+}
+.title {
+	font-weight: bold;
+	background-color: #CCCCFF;
+	padding: 2px;
+	/*background-color:#FFFFFF;*/
+}
+.bad_title {
+	font-weight: bold;
+	color: #666666;
+	padding: 2px;
+	background-color:#CCCCCC;
+}
+.style2 {font-size: 14px}
+.style4 {color: #999999}
+-->
+</style>
+<br>
+<script language="JavaScript">
+<!--
+//Globales modifiables
+var g_lvl = 0;
+var g_tile = 1;
+var g_active_tiles = 1;
+//Globales constantes
+var g_max_tiles = 255;
+// Initialisation des Arrays
+var a_mini = new Array(16);
+	for(a_m = 0; a_m < 16; a_m++) {
+		a_mini[a_m] = "000000";
+	};
+var g_a_tile_info = new Array(g_max_tiles);
+	for (a_t = 0; a_t < g_max_tiles; a_t++) {
+		g_a_tile_info[a_t] = init_tile();
+	};
+var a_tiles = new Array(12);
+    for (a_i = 0; a_i < 12; a_i++) {
+       	a_tiles[a_i] = new Array(16);
+        for(a_j = 0; a_j < 16; a_j++) {
+            a_tiles[a_i][a_j] = new Array(16);
+            for(a_k = 0; a_k < 16; a_k++) {
+				if (a_i == 0) {
+					a_tiles[a_i][a_j][a_k] = true;
+				}else {
+                	a_tiles[a_i][a_j][a_k] = false;
+				}
+            };
+        };
+	};
+    
+var a_hex = new Array(16)
+for (hx = 0; hx < 10; hx++) {
+    a_hex[hx] = hx;
+};
+a_hex[10] = "A";
+a_hex[11] = "B";
+a_hex[12] = "C";
+a_hex[13] = "D";
+a_hex[14] = "E";
+a_hex[15] = "F";
+
+var g_bool_square = false;
+var g_bool_square_set = false;
+var x_1 = 0;
+var y_1 = 0;
+var x_2 = 0;
+var y_2 = 0;
+//-----------------------------------------------------------------------------------------------------
+
+//TILE FUNCTIONS
+
+//-----------------------------------------------------------------------------------------------------
+//Changes the active tile
+function change_tile(int_n) {
+	var str_out = "";
+	if ((g_tile + int_n) > 0 && (g_tile + int_n) <= g_max_tiles && (g_tile + int_n) <= g_active_tiles) {
+		str_out = (g_tile + int_n) + "";
+		g_tile = g_tile + int_n;
+		while (str_out.length < 3) {
+			str_out = "a" + str_out;
+		}
+		str_out = str_out.replace(/a/g,"&nbsp;")
+		document.getElementById("tx_num").innerHTML = str_out;
+	}else {
+		alert("Cannot update, tile number outside boundaries (" + g_tile + " of " + g_active_tiles + " active tiles).\nClick \"ADD TILE\" to make a new active tile , maximum is "+ g_max_tiles + ".");
+	};
+	get_lua();
+};
+//Adds an active tile
+function add_tile() {
+	var str_out = "";
+	if (g_active_tiles + 1 <= g_max_tiles) {
+		g_active_tiles = g_active_tiles + 1;
+		str_out = g_active_tiles + "";
+		while (str_out.length < 3) {
+			str_out = "a" + str_out;
+		}
+		str_out = str_out.replace(/a/g,"&nbsp;")
+		document.getElementById("tx_max").innerHTML = str_out;
+		update_lua();
+	}else {
+		alert("Cannot add active tile, limit reached.\nMaximum is "+ g_max_tiles + ".");
+	};
+};
+//Deletes the last active tile (will make it delete current tile)
+function delete_tile() {
+	var str_out = "";
+	var a_temp = new Array(g_max_tiles);
+	if (g_active_tiles - 1 >= 1) {
+		if (confirm("This will delete tile " + g_active_tiles + " , continue?")) {
+			g_active_tiles = g_active_tiles - 1;
+			str_out = g_active_tiles + "";
+			while (str_out.length < 3) {
+				str_out = "a" + str_out;
+			}
+			str_out = str_out.replace(/a/g,"&nbsp;")
+			document.getElementById("tx_max").innerHTML = str_out;
+			update_lua();
+		};
+	}else {
+		alert("Cannot delete the last tile of the tileset.");
+	};
+	get_lua();
+};
+//Creates a blank tile template
+function init_tile() {
+	var str_init = "";
+	str_init = str_init + '            EditorName = "Blank floor tile",\n';
+	str_init = str_init + '            IsometricImage = png_image("$(extension)/image/32x40-001.png"),\n';
+	str_init = str_init + '            Shape = [[\n'
+	for (i = 0; i < 11; i++){
+		str_init = str_init + '                0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,\n';
+	}
+	str_init = str_init + '                FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,FFFF,\n';
+	str_init = str_init + '            ]],\n';
+	str_init = str_init + '            MinimapImage = [[\n';
+	for (j = 0; j < 4; j++){
+		str_init = str_init + '                000000,000000,000000,000000,\n';
+	}
+	str_init = str_init + '            ]],\n';
+	str_init = str_init + '            Tile_Type = 0,\n';
+	str_init = str_init + '            Armour = 10,\n';
+	str_init = str_init + '            TU_Walk = 4,\n';
+	str_init = str_init + '            TU_Fly = 4,\n';
+	str_init = str_init + '            TU_Slide = 4,\n';
+	return(str_init);
+}
+//-----------------------------------------------------------------------------------------------------
+
+//SHAPE EDITING FUNCTIONS
+
+//-----------------------------------------------------------------------------------------------------
+//Initialises the grid
+function draw_grid() {
+    for (k = 0; k < 16; k++) {
+        for (j = 0; j < 16; j++) {
+            document.write('<div id="divj_'+ j + 'k_' + k + '" style="background-color:#FFFFFF; position:absolute;');
+            document.write(' top:' + (390 + 19 * k ) + 'px; left:' + (140 + 19 * j) + 'px;');
+            document.write('border:1px solid #666699; width:18px; height:18px;"><a onclick="set_grid(this, '+ j + ', ' + k + ');return(false);" href="#"><img src="blank.gif" width="18" height="18" border="0"></a></div>');
+        };
+    };
+};
+//Initialises the levels
+function draw_levels() {
+    for (i = 0; i < 12; i++) {
+        document.write('<div id="lvli_'+ i + '" style="background-color:#FFFFFF; position:absolute;');
+        document.write(' top:' + (390 + 17 * (11-i) ) + 'px; left:' + (470) + 'px;');
+        document.write('border:1px solid #666699; width:170px; height:16px;"><a onclick="set_level(' + i + ');return(false);" href="#"><img src="blank.gif" width="170" height="16" border="0"></a></div>');
+    };
+};
+//Changes the active level for Shape
+function set_level(lvl_num){
+    g_lvl = lvl_num;
+    update_levels();
+    update_grid();
+};
+//Changes the information in the Array on click of a grid unit
+function set_grid(id_item, _j, _k) {
+    if (g_bool_square) {
+        if (g_bool_square_set) {
+            x_2 = _j
+            y_2 = _k
+            make_square();
+            g_bool_square_set = false;
+            x_1 = 0;
+            y_1 = 0;
+            x_2 = 0;
+            y_2 = 0;
+        }else {
+            x_1 = _j
+            y_1 = _k
+            g_bool_square_set = true;
+        };
+    };
+    a_tiles[g_lvl][_j][_k] = !a_tiles[g_lvl][_j][_k];
+    update_grid();
+    save_lua();
+};
+//Redraws the grid
+function update_grid() {
+    for (k = 0; k < 16; k++) {
+        for (j = 0; j < 16; j++) {
+            if (a_tiles[g_lvl][j][k]) {
+                document.getElementById('divj_'+ j + 'k_' + k).style.backgroundColor = "#CCCCFF";
+            }else {
+                document.getElementById('divj_'+ j + 'k_' + k).style.backgroundColor = "#FFFFFF";
+            };
+        };
+    };
+};
+//Redraws the levels according
+function update_levels() {
+    for (lv_i = 0; lv_i < 12; lv_i++) {
+        if (lv_i == g_lvl) {
+            document.getElementById('lvli_'+ lv_i).style.backgroundColor = "#CCCCFF";
+        }else {
+            document.getElementById('lvli_'+ lv_i).style.backgroundColor = "#FFFFFF";
+        };
+    };
+};
+//Sets all units in the current level to empty
+function clear_lvl() {
+    if (confirm("Are you sure you want to empty current level ?")) {
+        for (ck = 0; ck < 16; ck++) {
+            for (cj = 0; cj < 16; cj++) {
+                a_tiles[g_lvl][cj][ck] = false;
+            };
+        };
+    };
+    update_grid();
+    save_lua();
+};
+//Sets all empty units to filled and filled units to empty in the current level
+function invert_lvl() {
+    for (ck = 0; ck < 16; ck++) {
+        for (cj = 0; cj < 16; cj++) {
+            a_tiles[g_lvl][cj][ck] = !a_tiles[g_lvl][cj][ck];
+        };
+    };
+    update_grid();
+    save_lua();
+};
+//Activates or deactivates the Shape's Square making tool
+function act_square() {
+    if (g_bool_square) {
+        document.getElementById("bt_square").style.backgroundColor = "#FFFFFF";
+        g_bool_square = false;
+        g_bool_square_set = false;
+        x_1 = 0;
+        y_1 = 0;
+        x_2 = 0;
+        y_2 = 0;
+    }else {
+        document.getElementById("bt_square").style.backgroundColor = "#CCCCFF";
+        g_bool_square = true;
+        g_bool_square_set = false;
+    };
+};
+//Shape's Square making tool
+function make_square() {
+    var j_min = 0;
+    var j_max = 0;
+    var k_min = 0;
+    var k_max = 0;
+    var inv = false;
+    if (x_1 <= x_2) {
+        j_min = x_1;
+        j_max = x_2;
+    }else {
+        j_min = x_2;
+        j_max = x_1;
+    };
+    if (y_1 <= y_2) {
+        k_min = y_1;
+        k_max = y_2;
+    }else {
+        k_min = y_2;
+        k_max = y_1;
+    };
+    for (ok = k_min; ok <=  k_max; ok++) {
+        for (oj = j_min; oj <= j_max; oj++) {
+            if ((oj != x_1 || ok != y_1) && (oj != x_2 || ok != y_2)) {
+            a_tiles[g_lvl][oj][ok] = !a_tiles[g_lvl][oj][ok];
+            };
+        };
+    };
+    update_grid();
+    save_lua();
+};
+//Shape's rotation tool
+function rotate_lvl() {
+	var a_temp = new Array(16);
+	for (i = 0; i < 16; i++) {
+		a_temp[i] = new Array(16);
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_temp[_x][_y] = a_tiles[g_lvl][_y][15-_x];
+		};
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_tiles[g_lvl][_x][_y] = a_temp[_x][_y];
+		};
+	};
+	update_grid();
+    save_lua();
+};
+//Shape's horizontal mirror tool
+function mirror_x_lvl() {
+	var a_temp = new Array(16);
+	for (i = 0; i < 16; i++) {
+		a_temp[i] = new Array(16);
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_temp[_x][_y] = a_tiles[g_lvl][15-_x][_y];
+		};
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_tiles[g_lvl][_x][_y] = a_temp[_x][_y];
+		};
+	};
+	update_grid();
+    save_lua();
+};
+//Shape's vertical mirror tool
+function mirror_y_lvl() {
+	var a_temp = new Array(16);
+	for (i = 0; i < 16; i++) {
+		a_temp[i] = new Array(16);
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_temp[_x][_y] = a_tiles[g_lvl][_x][15-_y];
+		};
+	};
+	for (_x = 0; _x < 16; _x++) {
+		for (_y = 0; _y < 16; _y++) {
+		a_tiles[g_lvl][_x][_y] = a_temp[_x][_y];
+		};
+	};
+	update_grid();
+    save_lua();
+};
+//-----------------------------------------------------------------------------------------------------
+
+//MINIMAP RELATED FUNCTIONS
+
+//-----------------------------------------------------------------------------------------------------
+//initialises the minimap
+function draw_mini() {
+	for (im = 0; im < 16; im++) {
+		document.write('<div id="divmini_'+ im + '" style="background-color:#000000; position:absolute;');
+		document.write(' top:' + (145 + 6 * Math.floor(im / 4) ) + 'px; left:' + (612 + 6 * (im % 4)) + 'px;');
+		document.write(' width:6px; height:6px;">&nbsp;</div>');
+	};
+};
+//Redraws the minimap
+function update_mini() {
+	var err = false;
+	for (im = 0; im < 16; im++) {
+		a_mini[im] = eval("document.f_text.mini_"+im+".value");
+		if (!a_mini[im].match(/^[a-fA-F0-9]{6}$/)) {
+			err = true;
+		}
+	};
+	if (err) {
+		alert("Error, one minimap value or more is not a valid hex color");
+	}else{
+		show_mini();
+		save_lua();
+	};
+};
+
+//Updates the minimap preview
+function show_mini() {
+	for (im = 0; im < 16; im++) {
+		document.getElementById("divmini_"+im).style.backgroundColor = "#" + a_mini[im];
+	};
+};
+//-----------------------------------------------------------------------------------------------------
+
+//IMAGE AND PNG RELATED FUNCTIONS
+
+//-----------------------------------------------------------------------------------------------------
+
+//Updates the sprite preview and the image window
+function update_img() {
+	var str_out = "";
+    var srcf = "";
+    var imgt = new Image();
+    srcf = "file:///" + document.f_text.ext_path.value;
+    srcf = srcf + "\\" + document.f_text.image_name.value;
+    imgt.src = srcf;
+    var sp_Xoffset = 0;
+    var sp_Yoffset = 0;
+    var px_Xoffset = 0;
+    var px_Yoffset = 0;
+    if (isNaN(document.f_text.sprite_num.value)) {
+        alert("Cannot update image, sprite number is not a number");
+    }else {
+        if (document.f_text.sprite_num.value > 0 && document.f_text.sprite_num.value < (Math.floor(((imgt.width * 2) + 2)/66) * Math.floor((imgt.height * 2) + 2)/82)) {
+            sp_Xoffset = (document.f_text.sprite_num.value - 1);
+            px_Xoffset = sp_Xoffset * 66;
+            sp_Yoffset = px_Xoffset / ((imgt.width * 2) + 2);
+            px_Xoffset = px_Xoffset % ((imgt.width * 2) + 2);
+            px_Yoffset = Math.floor(sp_Yoffset) * 82;
+			str_out = '<div style="position:relative; top:-' + px_Yoffset + 'px; left:-' + px_Xoffset + 'px; width:' + (imgt.width * 2) + 'px; height:' + (imgt.height * 2) + 'px;">';
+			str_out = str_out + '<a href="#" onmouseover="document.getElementById(\'img_full\').style.visibility = \'visible\';" onmouseout="document.getElementById(\'img_full\').style.visibility = \'hidden\';">';
+			str_out = str_out + '<img src="' + imgt.src + '" width="' + (imgt.width * 2) + '" height="' + (imgt.height * 2) + '" border="0"></a></div>';
+			document.getElementById("png_sprite").innerHTML = str_out;
+			document.getElementById("img_full").innerHTML = '<img src="' + imgt.src + '" width="' + imgt.width + '" height="' + imgt.height + '" border="0">';
+        	save_lua();
+		}else {
+			document.getElementById("png_sprite").innerHTML = 'None';
+			document.getElementById("img_full").innerHTML = '&nbsp;';
+			if (imgt.width == 0) {
+				if (confirm('Warning : Image not found. Please check Extension path and Image path\n\nKnown bug #003 : If you have just changed paths, retry once.\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+					save_lua();
+				};
+			}else {
+            	if (confirm('Warning : Cannot update image, sprite number outside image boundaries\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+					save_lua();
+				};
+			}
+        };
+    };
+};
+//Adds a value to the sprite number, also affects image
+function add_tile_num(int_n) {
+    var imgt = new Image();
+    srcf = "file:///" + document.f_text.ext_path.value;
+    srcf = srcf + "\\" + document.f_text.image_name.value;
+    imgt.src = srcf;
+    if (isNaN(document.f_text.sprite_num.value)) {
+        alert("Cannot update image, sprite number is not a number");
+    }else {
+        if ((parseInt(document.f_text.sprite_num.value) + int_n) > 0 && (parseInt(document.f_text.sprite_num.value) + int_n) < (Math.floor(((imgt.width * 2) + 2)/66) * Math.floor((imgt.height * 2) + 2)/82)) {
+            document.f_text.sprite_num.value = parseInt(document.f_text.sprite_num.value) + int_n;
+        }else {
+            alert("Cannot update image, sprite number outside image boundaries");
+        };
+    };
+    update_img();
+};
+
+//-----------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------
+
+//LUA RELATED - CORE OF APPLICATION
+
+//-----------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------------------------
+function extract_images(_source) {
+	var str_prop = "";
+	var str_name = "";
+	var str_ext = "";
+	var str_num = "";
+	var a_str_num = new Array(8);
+	str_prop = get_prop(_source, "IsometricImage", "=", ",");
+	if (str_prop.indexOf("{") != -1){
+		//list
+		str_prop = get_prop(_source, "IsometricImage", "{", "}");
+		str_prop = str_prop.replace(/[\s\r\n\t]/g,"");
+		a_img = str_prop.split(",");
+		str_ext = a_img[0].substring(a_img[0].lastIndexOf('.'),a_img[0].lastIndexOf('"'));
+		str_num = a_img[0].substring(a_img[0].lastIndexOf('-')+1,a_img[0].lastIndexOf('.'));
+		for (i = 0; i < 8; i++) {
+			a_str_num[i] = a_img[i].substring(a_img[i].lastIndexOf('-')+1,a_img[i].lastIndexOf('.'));
+			a_str_num[i] = a_str_num[i].replace(/^0?0?/,"");
+			eval('document.f_text.img_ani' + (i + 1)).value = a_str_num[i];
+		};
+		if (a_img[0].indexOf('$(extension)') == -1) {
+			str_name = a_img[0].substring(a_img[0].indexOf('"')+1,a_img[0].lastIndexOf('32x40')-1);
+		}else {
+			str_name = a_img[0].substring(a_img[0].indexOf('/')+1,a_img[0].lastIndexOf('32x40')-1);
+		};
+		document.f_text.ck_anim.checked = true;
+		switch_anim();
+	}else{
+		//single
+		str_prop = str_prop.replace(/[\r\n\t]/g,"");
+		str_ext = str_prop.substring(str_prop.lastIndexOf('.'),str_prop.lastIndexOf('"'));
+		str_num = str_prop.substring(str_prop.lastIndexOf('-')+1,str_prop.lastIndexOf('.'));
+		if (str_prop.indexOf('$(extension)') == -1) {
+			str_name = str_prop.substring(str_prop.indexOf('"')+1,str_prop.lastIndexOf('32x40')-1);
+		}else {
+			str_name = str_prop.substring(str_prop.indexOf('/')+1,str_prop.lastIndexOf('32x40')-1);
+		};
+		document.f_text.ck_anim.checked = false;
+		switch_anim();
+	};
+	document.f_text.image_name.value = str_name + str_ext;
+	document.f_text.sprite_num.value = str_num.replace(/^0?0?/,"");
+};
+//Extracts a select field value
+function extract_prop_numeric(_source, _sfield, _prop, _min, _max, _required, _default) {
+	var str_prop = get_prop(_source, _prop, "=", ",");
+	var err = "";
+	str_prop = str_prop.replace(/\s/g,"");
+	if (!isNaN(str_prop) && str_prop != "") {
+		if ((parseInt(str_prop) >= _min) && (parseInt(str_prop) <= _max)) {
+			_sfield.value = str_prop;
+		}else {
+			if (_required) {
+				err = err + 'Cannot set option : ' + _prop + ' value (' + str_prop + ') outside boundaries (' + _min + ' - ' + _max + ')\nUsing default value';
+				str_prop = _default;
+				_sfield.value = str_prop;
+			}else {
+				err = err + 'Cannot set option : ' + _prop + ' value (' + str_prop + ') outside boundaries (' + _min + ' - ' + _max + ')';
+			}
+		};
+	}else {
+		if (_required) {
+			err = err + _prop + " is required and not a number, using default value";
+			str_prop = _default;
+			_sfield.value = str_prop;
+		};
+	};
+	if (err != "") {
+		alert(err);
+	};
+	return err;
+};
+//Extracts the numeric value and checks the checkbox if set
+function extract_prop_bool_numeric(_source, _ckfield, _txfield, _prop, _min, _max) {
+	var str_prop = get_prop(_source, _prop, "=", ",");
+	var err = "";
+	str_prop = str_prop.replace(/\s/g,"");
+	if (!isNaN(str_prop) && str_prop != "") {
+		if ((parseInt(str_prop) >= _min) && (parseInt(str_prop) <= _max)) {
+			_ckfield.checked = true;
+			_txfield.disabled = false;
+			_txfield.value = str_prop;
+		}else {
+			err = err + 'Cannot set option : ' + _prop + ' value (' + str_prop + ') outside boundaries (' + _min + ' - ' + _max + ')';
+			_ckfield.checked = false;
+			_txfield.disabled = true;
+			_txfield.value = str_prop;
+		};
+	}else {
+		_ckfield.checked = false;
+		_txfield.disabled = true;
+	};
+	if (err != "") {
+		alert(err);
+	};
+	return err;
+};
+//Extracts values for explosives
+function extract_prop_expl(_source, _ckfield, _txfield, _sfield, _prop1, _prop2, _min1, _max1, _min2, _max2) {
+	var str_prop1 = get_prop(_source, _prop1, "=", ",");
+	var str_prop2 = get_prop(_source, _prop2, "=", ",");
+	var err = "";
+	str_prop1 = str_prop1.replace(/\s/g,"");
+	str_prop2 = str_prop2.replace(/\s/g,"");
+	_ckfield.checked = false;
+	_txfield.disabled = true;
+	_sfield.disabled = true;
+	if (!isNaN(str_prop1) && str_prop1 != "") {
+		if ((parseInt(str_prop1) >= _min1) && (parseInt(str_prop1) <= _max1)) {
+			_ckfield.checked = true;
+			_txfield.disabled = false;
+			_txfield.value = str_prop1;
+			_sfield.disabled = false;
+		}else {
+			err = err + 'Cannot set option : ' + _prop1 + ' value (' + str_prop1 + ') outside boundaries (' + _min1 + ' - ' + _max1 + ')';
+			_txfield.value = str_prop;
+		};
+	};
+	if (!isNaN(str_prop2) && str_prop2 != "") {
+		if ((parseInt(str_prop2) >= _min2) && (parseInt(str_prop2) <= _max2)) {
+			_ckfield.checked = true;
+			_txfield.disabled = false;
+			_sfield.disabled = false;
+			_sfield.value = str_prop2;
+		}else {
+			err = err + 'Cannot set option : ' + _prop2 + ' value (' + str_prop2 + ') outside boundaries (' + _min2 + ' - ' + _max2 + ')';
+			_sfield.value = str_prop2;
+		};
+	};
+	if (err != "") {
+		alert(err);
+	};
+	return err;
+};
+//Extracts a boolean value
+function extract_prop_bool(_source, _ckfield, _prop) {
+	var str_prop = get_prop(_source, _prop, "=", ",");
+	var err = "";
+	str_prop = str_prop.replace(/\s/g,"");
+	if(!isNaN(str_prop)) {
+		if (str_prop != "") {
+			if (str_prop == "1") {
+				_ckfield.checked = true;
+			}else {
+				_ckfield.checked = false;
+			};
+		}else {
+			_ckfield.checked = false;
+		};
+	}else {
+		err = err + 'Cannot set option : ' + _prop + ' value (' + str_prop + ') must be 0 or 1';
+	};
+	if (err != "") {
+		alert(err);
+	};
+	return err;
+};
+//Extracts walking values
+function extract_prop_walk(_source, _ckfield, _txwalk, _txfly, _txslide, _propwalk, _propfly, _propslide, _min, _max) {
+	var str_prop_walk = get_prop(_source, _propwalk, "=", ",");
+	var str_prop_fly = get_prop(_source, _propfly, "=", ",");
+	var str_prop_slide = get_prop(_source, _propslide, "=", ",");
+	str_prop_walk = str_prop_walk.replace(/\s/g,"");
+	str_prop_fly = str_prop_fly.replace(/\s/g,"");
+	str_prop_slide = str_prop_slide.replace(/\s/g,"");
+	var err = "";
+	_ckfield.checked = false;
+	_txwalk.disabled = true;
+	_txfly.disabled = true;
+	_txslide.disabled = true;
+	if (!isNaN(str_prop_walk) && str_prop_walk != "") {
+		if ((parseInt(str_prop_walk) < _min) || (parseInt(str_prop_walk) > _max)) {
+			err = err + _propwalk + ' value (' + str_prop_walk + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			_txwalk.value = "-1";
+		}else {
+			_txwalk.value = str_prop_walk;
+			_ckfield.checked = true;
+			_txwalk.disabled = false;
+			_txfly.disabled = false;
+			_txslide.disabled = false;
+		};
+	}else {
+		err = err + _propwalk + ' not defined or not a number\n';
+		_txwalk.value = "-1";
+	};
+	if (!isNaN(str_prop_fly) && str_prop_fly != "") {
+		if ((parseInt(str_prop_fly) < _min) || (parseInt(str_prop_fly) > _max)) {
+			err = err + _propfly + ' value (' + str_prop_fly + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			_txfly.value = "-1";
+		}else {
+			_txfly.value = str_prop_fly;
+			_ckfield.checked = true;
+			_txwalk.disabled = false;
+			_txfly.disabled = false;
+			_txslide.disabled = false;
+		};
+	}else {
+		err = err + _propfly + ' not defined or not a number\n';
+		_txfly.value = "-1";
+	};
+	if (!isNaN(str_prop_slide) && str_prop_slide != "") {
+		if ((parseInt(str_prop_slide) < _min) || (parseInt(str_prop_slide) > _max)) {
+			err = err + _propslide + ' value (' + str_prop_slide + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			_txslide.value = "-1";
+		}else {
+			_txslide.value = str_prop_slide;
+			_ckfield.checked = true;
+			_txwalk.disabled = false;
+			_txfly.disabled = false;
+			_txslide.disabled = false;
+		};
+	}else {
+		err = err + _propslide + ' not defined or not a number\n';
+		_txslide.value = "-1";
+	};
+	if (_txwalk.value == "-1" && _txfly.value == "-1" && _txslide.value == "-1") {
+		_ckfield.checked = false;
+		_txwalk.disabled = true;
+		_txfly.disabled = true;
+		_txslide.disabled = true;
+		_txwalk.value = "4";
+		_txfly.value = "4";
+		_txslide.value = "4";
+	}else {
+		if (err != "") {
+			alert("Warning for Walk, Fly and Slide values,\n" + err + "Using -1 for listed items");
+		};
+	};
+	return err;
+};
+//Returns a LUA property as a string
+function get_prop(str_source, str_prop, str_in, str_out) {
+	//Use array delimiters or ( = and , ) for str_in and str_out
+	var str_return = "";
+	var int_prop_pos = str_source.indexOf(str_prop);
+	var start_pos = str_source.indexOf(str_in,int_prop_pos)+str_in.length;
+	var end_pos = str_source.indexOf(str_out,start_pos);
+	if (int_prop_pos != -1) {
+		str_return = str_source.substring(start_pos,end_pos);
+	}
+	return str_return;
+};
+//Returns a formatted string of property _prop with the value of _txfield
+function opt_get_numeric(_txfield, _prop, _min, _max, _required, _default) {
+	var str_return = "";
+	if (!isNaN(_txfield.value) && _txfield.value != "") {
+		if ((parseInt(_txfield.value) >= _min) && (parseInt(_txfield.value) <= _max)) {
+			str_return = '            ' + _prop + ' = ' + _txfield.value + ',\n';
+		}else {
+			if (_required) {
+				alert('Cannot set option : ' + _prop + ' value (' + _txfield.value + ') outside boundaries (' + _min + ' - ' + _max + ')\nUsing default value');
+				str_return = '            ' + _prop + ' = ' + _default + ',\n';
+				_txfield.value = _default;
+			}else {
+				alert('Cannot set option : ' + _prop + ' value (' + _txfield.value + ') outside boundaries (' + _min + ' - ' + _max + ')');
+			}
+		};
+	}else {
+		if (_required) {
+			alert(_prop + " is required and not a number, using default value");
+			str_return = '            ' + _prop + ' = ' + _default + ',\n';
+		};
+	};
+	return str_return;
+};
+//returns a formatted string of property _prop with the value of _txfield if _ckfield is checked
+function opt_get_bool_numeric(_ckfield, _txfield, _prop, _min, _max) {
+	var str_return = "";
+	if (_ckfield.checked) {
+		if (!isNaN(_txfield.value)) {
+			if ((parseInt(_txfield.value) >= _min) && (parseInt(_txfield.value) <= _max)) {
+				str_return = '            ' + _prop + ' = ' + _txfield.value + ',\n'
+			}else {
+				if (_prop == "Die_MCD") {
+					alert('Cannot add option : ' + _prop + ' value (' + _txfield.value + ') outside boundaries (' + _min + ' - ' + _max + ')\nAdd a tile to push maximum boundary (up to 255)');
+				}else{
+					alert('Cannot add option : ' + _prop + ' value (' + _txfield.value + ') outside boundaries (' + _min + ' - ' + _max + ')');
+				};
+			};
+		}else {
+			alert('Cannot add option : ' + _prop + ' value (' + _txfield.value + ') is not a number');
+		};
+	};
+	return str_return;
+};
+//returns a formatted string of property _prop with the value of 1 if _ckfield is checked
+function opt_get_bool(_ckfield, _prop) {
+	var str_return = "";
+	if (_ckfield.checked) {
+		str_return = '            ' + _prop + ' = ' + 1 + ',\n'
+	};
+	return str_return;
+};
+//returns a formatted string for walking properties, if required and not set, all values are set to 4.
+function opt_get_walk( _ckfield, _txwalk, _txfly, _txslide, _propwalk, _propfly, _propslide, _min, _max) {
+	var str_return = "";
+	var err = "";
+	if (_ckfield.checked) {
+		if (!isNaN(_txwalk.value) && _txwalk.value != "") {
+			if ((parseInt(_txwalk.value) < _min) || (parseInt(_txwalk.value) > _max)) {
+				err = err + _propwalk + ' value (' + _txwalk.value + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			};
+		}else {
+			err = err + _propwalk + ' value (' + _txwalk.value + ') is not a number\n';
+		};
+		if (!isNaN(_txfly.value) && _txfly.value != "") {
+			if ((parseInt(_txfly.value) < _min) || (parseInt(_txfly.value) > _max)) {
+				err = err + _propfly + ' value (' + _txfly.value + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			};
+		}else {
+			err = err + _propfly + ' value (' + _txfly.value + ') is not a number\n';
+		};
+		if (!isNaN(_txslide.value) && _txslide.value != "") {
+			if ((parseInt(_txslide.value) < _min) || (parseInt(_txslide.value) > _max)) {
+				err = err + _propslide + ' value (' + _txslide.value + ') outside boundaries (' + _min + ' - ' + _max + ')\n';
+			};
+		}else {
+			err = err + _propslide + ' value (' + _txslide.value + ') is not a number\n';
+		};
+		if (err == "") {
+			str_return = '            ' + _propwalk + ' = ' + _txwalk.value + ',\n';
+			str_return = str_return + '            ' + _propfly + ' = ' + _txfly.value + ',\n';
+			str_return = str_return + '            ' + _propslide + ' = ' + _txslide.value + ',\n';
+		}else{
+			alert("Error with Walk, Fly and Slide values,\n" + err + "Using default values")
+			str_return = '            ' + _propwalk + ' = ' + 4 + ',\n';
+			str_return = str_return + '            ' + _propfly + ' = ' + 4 + ',\n';
+			str_return = str_return + '            ' + _propslide + ' = ' + 4 + ',\n';		
+		};
+	};
+	return str_return;
+};
+//Rewrites the whole LUA
+function update_lua() {
+	//Variables spécifiques
+	var err = "";
+	var str_output = "";
+	//Variables de champs à afficher
+	var str_name = document.f_text.set_name.value;
+	var str_author = document.f_text.tx_auth.value;
+	if (!str_name.match(/^[A-Za-z0-9\s_]*$/)) {
+		err = err + "Illegal characters found in tileset name.\nUse letters, digits, spaces and underscores only.\n";
+	};
+	if (!str_author.match(/^[A-Za-z0-9\s_\.@\-]*$/)) {
+		err = err + "Illegal characters found in author name and email.\nUse letters, digits, spaces, @, dots, dashes and underscores only.\n";
+	};
+	//Concaténation de l'affichage
+	str_output = str_output + '-- The ' + str_name + ' tileset was created by ' + str_author + '\n';
+	str_output = str_output + '-- LUA generated by Nachtwolf\'s tileset editor\n\n';
+	str_output = str_output + 'AddTileset {\n';
+	str_output = str_output + '    Name = "' + str_name + '",\n';
+	str_output = str_output + '    Author = "' + str_author + '",\n';
+	str_output = str_output + '    Tiles = {\n';
+	for (i = 0; i < g_active_tiles; i++) {
+		str_output = str_output + '        [' + (i + 1) + '] = {\n';
+		str_output = str_output + g_a_tile_info[i];
+		str_output = str_output + '        },\n';
+	};
+	str_output = str_output + '    }\n}\n';
+	if (err == "") {
+		document.f_text.lua_text.value = str_output;
+	}else{
+		alert("Cannot update LUA\n" + err + "Please correct Main Settings to continue.\n\nIgnoring this warning may generate bugs.");
+	};
+};
+//Saves the current tile's LUA
+function save_lua() {
+	//Storage strings
+	var str_return = ""; 
+	var str_options = "";
+	var str_test = "";
+	//Hex related
+    var str_shape = "";
+	var str_minimap = "";
+	var multi_images = false;
+	var a_sprite = new Array(8);
+	//Image related
+	var str_image = document.f_text.image_name.value
+	var str_image_ext = str_image.substring(str_image.indexOf("."),str_image.length);
+	var str_image_name = str_image.substring(0,str_image.indexOf("."))
+	if (document.f_text.ck_anim.checked) {
+		for (i = 0; i < 8; i++) {
+			a_sprite[i] = parseInt(eval('document.f_text.img_ani' + (i + 1)).value) + "";
+			while (a_sprite[i].length < 3) {
+				a_sprite[i] = "0" + a_sprite[i];
+			};
+			multi_images = true;
+		}
+	}else {
+		var str_image_sprite = parseInt(document.f_text.sprite_num.value) + "";
+		while (str_image_sprite.length < 3) {
+			str_image_sprite = "0" + str_image_sprite;
+		};
+	}
+	//Format sprite number
+
+	//Editor name
+	var str_tile_name = document.f_text.tx_tile_name.value;
+	//Build option list
+	str_options =  str_options + opt_get_numeric(document.f_text.s_type, "Tile_Type", 0, 3, true, 0);
+	str_options =  str_options + opt_get_numeric(document.f_text.tx_armour, "Armour", 0, 255, true, 10);
+	str_options =  str_options + opt_get_walk(document.f_text.ck_walk, document.f_text.tx_tusw, document.f_text.tx_tusf, document.f_text.tx_tuss, "TU_Walk", "TU_Fly", "TU_Slide", -1, 80);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_dest, document.f_text.tx_dest, "Die_MCD", 1, g_active_tiles);
+	str_options =  str_options + opt_get_bool(document.f_text.ck_los, "Stop_LOS");
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_height, document.f_text.s_height, "T_Level", -24, 0);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_burn, document.f_text.tx_burn, "Fuel", 0, 255);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_expl, document.f_text.tx_expl, "HE_Strength", 0, 255);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_expl, document.f_text.s_expl, "HE_Type", 0, 1);
+	str_options =  str_options + opt_get_bool(document.f_text.ck_fire, "Block_Fire");
+	str_options =  str_options + opt_get_bool(document.f_text.ck_smoke, "Block_Smoke");
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_heblock, document.f_text.tx_heblock, "HE_Block", 0, 255);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_light_s, document.f_text.tx_light_s, "Light_Source", 0, 255);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_light, document.f_text.tx_light, "Light_Block", 0, 255);
+	str_options =  str_options + opt_get_bool(document.f_text.ck_grav, "Gravlift");
+	str_options =  str_options + opt_get_bool(document.f_text.ck_door, "Door");
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_door, document.f_text.tx_door, "Alt_MCD", 1, g_active_tiles);
+	str_options =  str_options + opt_get_bool(document.f_text.ck_ufodoor, "UFO_Door");
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_ufodoor, document.f_text.tx_ufodoor, "Alt_MCD", 1, g_active_tiles);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_pheight, document.f_text.tx_pheight, "P_Level", 0, 24);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_foot, document.f_text.tx_foot, "Footstep", 0, 255);
+	str_options =  str_options + opt_get_bool(document.f_text.ck_nofloor, "No_Floor");
+	str_options =  str_options + opt_get_bool(document.f_text.ck_Big_Wall, "Big_Wall");
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_Flammable, document.f_text.tx_Flammable, "Flammable", 0, 255);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_Smoke_Blockage, document.f_text.tx_Smoke_Blockage, "Smoke_Blockage", 0, 255);
+	str_options =  str_options + opt_get_bool_numeric(document.f_text.ck_Target_Type, document.f_text.tx_Target_Type, "Target_Type", 0, 255);
+	//Format Shape
+    var int_h = 0;
+    for (l_i = 0; l_i < 12; l_i++) {
+		str_shape = str_shape + "                ";
+        for (l_j = 0; l_j < 16; l_j++) {
+            for(l_k = 0; l_k < 4; l_k++) {
+                for(l_n = 0; l_n < 4; l_n++) {
+                    if(a_tiles[11-l_i][l_j][l_k * 4 + l_n]) {
+                        int_h = int_h + Math.pow(2,(3 - l_n));
+                    };
+                };
+                str_shape = str_shape + a_hex[int_h];
+                int_h = 0;
+            };
+            str_shape = str_shape + ',';
+        };
+        str_shape = str_shape + '\n';
+    };
+	//Format Minimap
+	for (im = 0; im < 4; im++) {
+		str_minimap = str_minimap + "                ";
+		for (it = 0; it < 4; it++) {
+		str_minimap = str_minimap + a_mini[(im * 4 + it)] + ',';
+			
+		};
+		str_minimap = str_minimap + "\n";
+	};
+	str_return = str_return + '            EditorName = "' + str_tile_name + '",\n'
+	if (multi_images) {
+		str_return = str_return + '            IsometricImage = {\n';
+		for (i = 0; i < 8; i++) {
+			str_return = str_return + '                png_image("$(extension)/' + str_image_name + '/32x40-' + a_sprite[i] + str_image_ext + '"),\n'
+		};
+		str_return = str_return + '            },\n';
+	}else{
+		str_return = str_return + '            IsometricImage = png_image("$(extension)/' + str_image_name + '/32x40-' + str_image_sprite + str_image_ext + '"),\n'
+	}
+	str_return = str_return + '            Shape = [[\n' + str_shape + '            ]],\n';
+	str_return = str_return + '            MinimapImage = [[\n' + str_minimap + '            ]],\n';
+	str_return = str_return + str_options;
+    g_a_tile_info[(g_tile - 1)] = str_return;
+}
+
+//Loads the whole LUA from input/output dialog and stores it in the g_a_tile_info Array
+function load_lua() {
+	document.getElementById("loading").style.visibility = "visible";
+	//Error and information management
+	var i = 0;
+	var start_pos = 0;
+	var end_pos = 0;
+	var end_trim = 0;
+	var err = "";
+	//Storage string
+	var str_out;
+	var str_lua = document.f_text.lua_text.value;
+	var str_tiles = str_lua;
+	//Information strings
+	var str_setname = "";
+	var str_setauth = "";
+	//Get and format the tileset name
+	str_setname = get_prop(str_lua, 'Name', '"', '"');
+	str_setauth = get_prop(str_lua, 'Author', '"', '"');
+	//while (str_setname.match(/[\r\n\t]/g)) { //Uncomment in case of problem
+	str_setname = str_setname.replace(/[\r\n\t]/g,"");
+	//}
+	if (!str_setname.match(/^[A-Za-z0-9\s_]*$/)) {
+		err = err + "Illegal characters found in tileset name.\nUse letters, digits, spaces and underscores only.\n";
+	};
+	//while (str_setname.match(/[\r\n\t]/g)) { //Uncomment in case of problem
+	str_setauth = str_setauth.replace(/[\r\n\t]/g,"");
+	//}
+	if (!str_setauth.match(/^[A-Za-z0-9\s_\.@\-]*$/)) {
+		err = err + "Illegal characters found in author name and email.\nUse letters, digits, spaces, @, dots, dashes and underscores only.\n";
+	};
+	//Execute loading
+	if (err == "") {
+		document.f_text.set_name.value = str_setname;
+		document.f_text.tx_auth.value = str_setauth;
+		//str_tiles = str_tiles.replace(/[\r\n\t\s]/g,"");
+		while ((i < g_max_tiles) && (err == "")) {
+			start_pos = str_tiles.indexOf("[" + (i + 1) + "]");
+			end_pos = str_tiles.indexOf("[" + (i + 2) + "]",start_pos);
+			if (start_pos != -1) {
+				if (end_pos == -1) {
+					g_a_tile_info[i] = str_tiles.substring(start_pos,str_tiles.length);
+					//Clean up, add exit point and trim
+					//AddTerrain function might be present, make sure it's cut off
+					if (g_a_tile_info[i].indexOf('AddTerrain') != -1) {
+						g_a_tile_info[i] = g_a_tile_info[i].substring(0,g_a_tile_info[i].indexOf('AddTerrain'));
+					};
+					g_a_tile_info[i] = g_a_tile_info[i].replace(/^\s*\[[0-9]{0,3}]\s*=\s*\{\s*\n?\s*/,"            ");
+					//Looks up if IsometricImage is a list
+					if (g_a_tile_info[i].match(/IsometricImage\s?=\s?\{/)) {
+						end_trim = g_a_tile_info[i].indexOf('}',g_a_tile_info[i].indexOf('}')+1);
+					}else {
+						end_trim = g_a_tile_info[i].indexOf('}')
+					}
+					g_a_tile_info[i] = g_a_tile_info[i].substring(0,end_trim);
+					//End while clause and set general properties
+					g_active_tiles = (i + 1);
+					g_tile = 1;
+					i = g_max_tiles;
+				}else {
+					g_a_tile_info[i] = str_tiles.substring(start_pos,end_pos);
+					//Clean up and trim
+					g_a_tile_info[i] = g_a_tile_info[i].replace(/^\s*\[[0-9]{0,3}]\s*=\s*\{\s*\n?\s*/,"            ");
+					if (g_a_tile_info[i].match(/IsometricImage\s?=\s?\{/)) {
+						end_trim = g_a_tile_info[i].indexOf('}',g_a_tile_info[i].indexOf('}')+1);
+					}else {
+						end_trim = g_a_tile_info[i].indexOf('}')
+					}
+					g_a_tile_info[i] = g_a_tile_info[i].substring(0,end_trim);
+				};
+			}else {
+				err = "Expected tile index [" + (i + 1) + "] not found, cannot load less than one tile.\nTiles must be ordered as 1,2,3,[...],n.";
+			};
+			i = i + 1;
+		};
+		if (err == "") {
+			if (g_active_tiles != 1) {
+				alert('LUA has been loaded successfully\n' + g_active_tiles + ' tiles loaded.');
+			}else {
+				alert('LUA has been loaded successfully\n' + g_active_tiles + ' tile loaded.');
+			}
+		}else {
+			alert('Error : invalid LUA input encountered while loading tile ' + i +'.\n' + err);
+		};
+    }else {
+        alert('Error : invalid LUA input\n' + err);
+    };
+	document.getElementById("loading").style.visibility = "hidden";
+	str_out = g_active_tiles + "";
+	while (str_out.length < 3) {
+		str_out = "a" + str_out;
+	}
+	str_out = str_out.replace(/a/g,"&nbsp;")
+	document.getElementById("tx_max").innerHTML = str_out;
+    update_grid();
+    get_lua();
+	update_lua();
+	update_mini();
+};
+//Loads the active tile's LUA from the g_a_tile_info Array
+function get_lua() {
+	var str_lua = g_a_tile_info[(g_tile - 1)];
+	var str_settilename = "";
+	var str_tile = "";
+	var str_minimap = "";
+    var err = "";
+    var hex_num = 0;
+	str_settilename = get_prop(str_lua, 'EditorName', '"', '"');
+	//while (str_settilename.match(/[\r\n\t]/g)) {
+	str_settilename = str_settilename.replace(/[\r\n\t]/g,"");
+	//};
+	if (!str_settilename.match(/^[A-Za-z0-9\s_]*$/)) {
+		err = "Illegal characters found in EditorName , use letters, digits, space and underscore only";
+	};
+	str_tile = get_prop(str_lua, "Shape", "[[", "]]");
+	//while (str_tile.match(/[\r\n\t\s]/g)) {
+	str_tile = str_tile.replace(/[\r\n\t\s]/g,"");
+	//};
+	str_minimap = get_prop(str_lua, "MinimapImage", "[[", "]]");
+	//while (str_minimap.match(/[\r\n\t\s]/g)) {
+	str_minimap = str_minimap.replace(/[\r\n\t\s]/g,"");
+	//};
+    var a_values = str_tile.split(",");
+	var a_minivalues = str_minimap.split(",");
+    if (a_values.length < 192) {
+        err = err + "Unable to load Shape : Wrong number of arguments\n";
+    }else {
+        for (ilua = 0; ilua < 192; ilua++) {
+            if (!a_values[ilua].match(/^[0-9A-Fa-f]{4}$/)){
+                err = err + "Unable to load Shape : Non hexadecimal values found\n";
+            };
+        };
+    };
+	if (a_minivalues.length < 16) {
+		err = err + "Unable to load MinimapImage : Wrong number of arguments\n";
+	}else{
+		for (imini = 0; imini < 16; imini++) {
+            if (!a_minivalues[imini].match(/^[0-9A-Fa-f]{6}$/)){
+				err = err + "Unable to load MinimapImage : Non hexadecimal color values found\n";
+			};
+		};
+	};
+    if (err == "") {
+		extract_images(str_lua);
+		extract_prop_numeric(str_lua, document.f_text.s_type, "Tile_Type", 0, 3, true, 0);
+		switch_type();
+		extract_prop_numeric(str_lua, document.f_text.tx_armour, "Armour", 0, 255, true, 10);
+		extract_prop_walk(str_lua, document.f_text.ck_walk, document.f_text.tx_tusw, document.f_text.tx_tusf, document.f_text.tx_tuss, "TU_Walk", "TU_Fly", "TU_Slide", -1, 80);
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_dest, document.f_text.tx_dest, "Die_MCD", 1, g_active_tiles);
+		extract_prop_bool(str_lua, document.f_text.ck_los, "Stop_LOS");
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_height, document.f_text.s_height, "T_Level", -24, 0);
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_burn, document.f_text.tx_burn, "Fuel", 0, 255);
+		extract_prop_expl(str_lua, document.f_text.ck_expl, document.f_text.tx_expl, document.f_text.s_expl, "HE_Strength", "HE_Type", 0, 255, 0, 1);
+		extract_prop_bool(str_lua, document.f_text.ck_fire, "Block_Fire");
+		extract_prop_bool(str_lua, document.f_text.ck_smoke, "Block_Smoke");
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_heblock, document.f_text.tx_heblock, "HE_Block", 0, 255);
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_light_s, document.f_text.tx_light_s, "Light_Source", 0, 255);
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_light, document.f_text.tx_light, "Light_Block", 0, 255);
+		extract_prop_bool(str_lua, document.f_text.ck_grav, "Gravlift");
+		extract_prop_bool(str_lua, document.f_text.ck_door, "Door");
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_door, document.f_text.tx_door, "Alt_MCD", 1, g_active_tiles);
+		extract_prop_bool(str_lua, document.f_text.ck_ufodoor, "UFO_Door");
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_ufodoor, document.f_text.tx_ufodoor, "Alt_MCD", 1, g_active_tiles);
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_pheight, document.f_text.tx_pheight, "P_Level", 0, 24);
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_foot, document.f_text.tx_foot, "Footstep", 0, 255);
+		extract_prop_bool(str_lua, document.f_text.ck_nofloor, "No_Floor");
+		extract_prop_bool(str_lua, document.f_text.ck_Big_Wall, "Big_Wall");
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_Flammable, document.f_text.tx_Flammable, "Flammable", 0, 255);
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_Smoke_Blockage, document.f_text.tx_Smoke_Blockage, "Smoke_Blockage", 0, 255);
+		extract_prop_bool_numeric(str_lua, document.f_text.ck_Target_Type, document.f_text.tx_Target_Type, "Target_Type", 0, 255);
+		document.f_text.tx_tile_name.value = str_settilename;
+		for (imini = 0; imini < 16; imini++) {
+			a_mini[imini] = a_minivalues[imini];
+		eval("document.f_text.mini_"+imini).value = a_mini[imini];
+		};
+        for (ilua = 0; ilua < 192; ilua++) {
+            for (it = 0; it < 4; it++) {
+                for (hx = 0; hx < 16; hx++) {
+                    if (a_hex[hx] == a_values[ilua].charAt(it)) {
+                    hex_num = hx;
+                    };
+                };
+                if (hex_num < 8) {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 0)] = false;
+                }else {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 0)] = true;
+                };
+                if (hex_num % 8 < 4) {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 1)] = false;
+                }else {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 1)] = true;
+                };
+                if (hex_num % 4 < 2) {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 2)] = false;
+                }else {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 2)] = true;
+                };
+                if (hex_num % 2 < 1) {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 3)] = false;
+                }else {
+                    a_tiles[11-parseInt(ilua / 16)][parseInt(ilua % 16)][(it * 4 + 3)] = true;
+                };
+            };
+        };
+    }else {
+        alert('Error parsing tile ' + g_tile + ' : invalid LUA input\n' + err + '\nUsing Blank floor tile');
+		g_a_tile_info[(g_tile - 1)] = init_tile();
+    };
+    update_grid();
+	update_mini();
+	update_img();
+};
+//-----------------------------------------------------------------------------------------------------
+
+//GUI FUNCTIONALITY RELATED
+
+//-----------------------------------------------------------------------------------------------------
+//Shows or hide help window
+function toggle_help() {
+    if (document.getElementById("h_win").style.visibility == "visible") {
+        document.getElementById("h_win").style.visibility = "hidden";
+    	document.getElementById("bt_help").style.backgroundColor = "#FFFFFF";
+    }else {
+        document.getElementById("h_win").style.visibility = "visible";
+        document.getElementById("bt_help").style.backgroundColor = "#CCCCFF";
+    };
+};
+function toggle_lua_dialog() {
+	update_lua();
+    if (document.getElementById("lua_dialog").style.visibility == "visible") {
+        document.getElementById("lua_dialog").style.visibility = "hidden";
+		document.getElementById("bt_lua_in_out").style.backgroundColor = "#FFFFFF";
+    }else {
+        document.getElementById("lua_dialog").style.visibility = "visible";
+		document.getElementById("bt_lua_in_out").style.backgroundColor = "#CCCCFF";
+    };
+};
+//Switches to enable or disable fields
+function switch_type() {
+	//Main switch, restricts some properties to certain tile types
+	if (document.f_text.s_type.value == "0") {
+		//Tile is Floor
+		document.getElementById("walk_msg").innerHTML = "<strong>Can walk</strong> on floor tile";
+		document.getElementById("walk_note").innerHTML = "(-1 to forbid any action)" 
+		document.f_text.ck_walk.checked = true;
+		document.f_text.ck_grav.disabled = false;
+		document.f_text.ck_door.disabled = true;
+		document.f_text.ck_door.checked = false;
+		document.f_text.ck_ufodoor.disabled = true;
+		document.f_text.ck_ufodoor.checked = false;
+		document.f_text.ck_height.disabled = true;
+		document.f_text.ck_height.checked = false;
+		document.f_text.ck_los.disabled = true;
+		document.f_text.ck_los.checked = false;
+	}else if (document.f_text.s_type.value == "3"){
+		//Tile is Object
+		document.getElementById("walk_msg").innerHTML = "<strong>Can walk</strong> through object";
+		document.getElementById("walk_note").innerHTML = "Adds to total TUs<br>(0 : no TU cost)<br>(-1 to forbid action)<br>...<br>See help for details" 
+		document.f_text.ck_walk.checked = false;
+		document.f_text.ck_grav.disabled = true;
+		document.f_text.ck_grav.checked = false;
+		document.f_text.ck_door.disabled = true;
+		document.f_text.ck_door.checked = false;
+		document.f_text.ck_ufodoor.disabled = true;
+		document.f_text.ck_ufodoor.checked = false;
+		document.f_text.ck_height.disabled = false;		
+		document.f_text.ck_los.disabled = false;
+		document.f_text.ck_los.checked = false;
+	}else {
+		//Tile is Wall
+		document.getElementById("walk_msg").innerHTML = "<strong>Can walk</strong> through wall";
+		document.getElementById("walk_note").innerHTML = "Adds to total TUs<br>(0 : no TU cost)<br>(-1 to forbid action)" 
+		document.f_text.ck_walk.checked = false;
+		document.f_text.ck_grav.disabled = true;
+		document.f_text.ck_grav.checked = false;
+		document.f_text.ck_door.disabled = false;
+		document.f_text.ck_ufodoor.disabled = false;
+		document.f_text.ck_height.disabled = true;
+		document.f_text.ck_height.checked = false;
+		document.f_text.ck_los.disabled = false;
+		document.f_text.ck_los.checked = true;
+	};
+	switch_walk();
+	switch_ufodoor();
+	switch_door();
+	switch_height();
+};
+
+function switch_walk() {
+    if (document.f_text.ck_walk.checked) {
+        document.f_text.tx_tusw.disabled = false;
+		document.f_text.tx_tusf.disabled = false;
+		document.f_text.tx_tuss.disabled = false;
+    }else {
+        document.f_text.tx_tusw.disabled = true;
+		document.f_text.tx_tusf.disabled = true;
+		document.f_text.tx_tuss.disabled = true;
+    };
+};
+function switch_burn() {
+    if (document.f_text.ck_burn.checked) {
+        document.f_text.tx_burn.disabled = false;
+    }else {
+        document.f_text.tx_burn.disabled = true;
+    };
+};
+function switch_expl() {
+    if (document.f_text.ck_expl.checked) {
+        document.f_text.tx_expl.disabled = false;
+		document.f_text.s_expl.disabled = false;
+    }else {
+        document.f_text.tx_expl.disabled = true;
+		document.f_text.s_expl.disabled = true;
+    };
+};
+function switch_dest() {
+    if (document.f_text.ck_dest.checked) {
+        document.f_text.tx_dest.disabled = false;
+    }else {
+        document.f_text.tx_dest.disabled = true;
+    };
+};
+function switch_ufodoor() {
+    if (document.f_text.ck_ufodoor.checked) {
+		document.f_text.ck_door.checked = "";
+		document.f_text.tx_door.disabled = true;
+        document.f_text.tx_ufodoor.disabled = false;
+    }else {
+        document.f_text.tx_ufodoor.disabled = true;
+    };
+};
+function switch_door() {
+    if (document.f_text.ck_door.checked) {
+		document.f_text.ck_ufodoor.checked = "";
+		document.f_text.tx_ufodoor.disabled = true;
+        document.f_text.tx_door.disabled = false;
+    }else {
+        document.f_text.tx_door.disabled = true;
+    };
+};
+function switch_light() {
+    if (document.f_text.ck_light.checked) {
+        document.f_text.tx_light.disabled = false;
+    }else {
+        document.f_text.tx_light.disabled = true;
+    };
+};
+function switch_light_s() {
+    if (document.f_text.ck_light_s.checked) {
+        document.f_text.tx_light_s.disabled = false;
+    }else {
+        document.f_text.tx_light_s.disabled = true;
+    };
+};
+function switch_height() {
+    if (document.f_text.ck_height.checked) {
+        document.f_text.s_height.disabled = false;
+    }else {
+        document.f_text.s_height.disabled = true;
+    };
+};
+function switch_pheight() {
+    if (document.f_text.ck_pheight.checked) {
+        document.f_text.tx_pheight.disabled = false;
+    }else {
+        document.f_text.tx_pheight.disabled = true;
+    };
+};
+function switch_heblock() {
+    if (document.f_text.ck_heblock.checked) {
+        document.f_text.tx_heblock.disabled = false;
+    }else {
+        document.f_text.tx_heblock.disabled = true;
+    };
+};
+function switch_foot() {
+    if (document.f_text.ck_foot.checked) {
+        document.f_text.tx_foot.disabled = false;
+    }else {
+        document.f_text.tx_foot.disabled = true;
+    };
+};
+function switch_Flammable() {
+    if (document.f_text.ck_Flammable.checked) {
+        document.f_text.tx_Flammable.disabled = false;
+    }else {
+        document.f_text.tx_Flammable.disabled = true;
+    };
+};
+function switch_Target_Type() {
+    if (document.f_text.ck_Target_Type.checked) {
+        document.f_text.tx_Target_Type.disabled = false;
+    }else {
+        document.f_text.tx_Target_Type.disabled = true;
+    };
+};
+function switch_Smoke_Blockage() {
+    if (document.f_text.ck_Smoke_Blockage.checked) {
+        document.f_text.tx_Smoke_Blockage.disabled = false;
+    }else {
+        document.f_text.tx_Smoke_Blockage.disabled = true;
+    };
+};
+function switch_anim() {
+    if (document.f_text.ck_anim.checked) {
+		for (i = 1; i <= 8; i++) {
+        	eval('document.f_text.img_ani'+i).disabled = false;
+		};
+		document.f_text.sprite_num.disabled = true;
+    }else {
+		for (i = 1; i <= 8; i++) {
+        	eval('document.f_text.img_ani'+i).disabled = true;
+		};
+		document.f_text.sprite_num.disabled = false;
+    };
+};
+//-->
+</script>  
+</head>
+
+<body>
+<div id="bt_square" class="button" style="top:390px;"><a onclick="act_square();return(false);" href="#"><strong>SQUARE</strong></a></div>
+<div id="bt_invert" class="button" style="top:420px;"><a onclick="invert_lvl();return(false);" href="#"><strong>INVERT</strong></a></div>
+<div id="bt_clear" class="button" style="top:450px;"><a onclick="rotate_lvl();return(false);" href="#"><strong>ROTATE 90</strong></a></div>
+<div id="bt_clear" class="button" style="top:470px;"><a onclick="mirror_x_lvl();return(false);" href="#"><strong>MIRROR X</strong></a></div>
+<div id="bt_clear" class="button" style="top:490px;"><a onclick="mirror_y_lvl();return(false);" href="#"><strong>MIRROR Y</strong></a></div>
+<div id="bt_clear" class="button" style="top:520px;"><a onclick="clear_lvl();return(false);" href="#"><strong>CLEAR</strong></a></div>
+<div style="position:absolute; top:375px; left:40px;"><strong>SHAPE TOOLS</strong></div>
+<div style="position:absolute; top:375px; left:140px; width: auto;"><strong>TILE UNITS GRID</strong> (White = empty, Blue = filled)</div>
+<div style="position:absolute; top:375px; left:470px;"><strong>TILE LEVELS</strong></div>
+<form action="" method="get" name="f_text" id="f_text">
+<div style="position:absolute; top:15px; left:40px;">
+<strong>MAIN SETTINGS</strong>
+<table border="0" cellspacing="0" cellpadding="3">
+  <tr>
+    <td>Current Extension path :
+      <br>
+      <input name="ext_path" type="text" value="C:\Program Files\UFO2000 Beta\extensions\folder-name" size="80"><br></td>
+    <td>Tileset name :<br>
+      <input name="set_name" type="text" value="New tile set" size="20" onchange="save_lua()"></td>
+	<td>Author (- email) : <br>
+      <input name="tx_auth" type="text" value="Author name - email" size="40" onchange="save_lua()"></td>
+  </tr>
+</table>
+</div>
+<div style="position:absolute; top:75px; left:40px; background-color:#FFFFFF; padding:5px 5px 10px 5px; width:1024px; border:1px solid #666699;">
+<strong>SELECT TILE TO EDIT :</strong><br>
+<img src="blank.gif" width="500" height="5" ><br>
+<div class="nav"><a href="#" onclick="change_tile(-1);return(false);"><strong>&lt; PREV</strong></a></div>
+<div class="nav" style="left:520px;"><a onclick="change_tile(1);return(false);" href="#"><strong>NEXT &gt;</strong></a></div>
+<div class="nav" style="left:620px;"><a onclick="add_tile();return(false);" href="#"><strong>ADD TILE</strong></a></div>
+<div class="nav" style="left:720px;"><a onclick="delete_tile();return(false);" href="#"><strong>DELETE</strong></a></div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tile Index : <span id="tx_num">&nbsp;&nbsp;1</span>/<span id="tx_max">&nbsp;&nbsp;1</span> Editor name : <input name="tx_tile_name" type="text" value="Blank floor tile" size="30" maxlength="30" onchange="save_lua()">
+</div>
+<div style="position:absolute; top:145px; left:425px;">
+<strong>MINIMAP IMAGE</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Preview : <br>
+<br>
+Hex color values :<br>
+<input name="mini_0" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_1" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_2" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_3" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();"><br>
+<input name="mini_4" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_5" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_6" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_7" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();"><br>
+<input name="mini_8" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_9" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_10" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_11" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();"><br>
+<input name="mini_12" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_13" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_14" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<input name="mini_15" type="text" value="000000" size="6" maxlength="6" onchange="update_mini();">
+<div id="bt_minimap" style="width:100px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="update_mini();return(false);" href="#"><strong>UPDATE IMAGE</strong></a></div>
+</div>
+<div style="position:absolute; top:145px; left:40px; width:auto;">
+<strong>TILE IMAGE</strong><br>
+<br>
+Path of image file to use (click UPDATE IMAGE to load):<br>
+<input name="image_name" type="text" value="image.png" size="50"><br>
+(Relative to extension folder, format : (subfolder\)file.ext)<br>
+<div id="png_sprite" style="border:1px solid #666699; width:64px; height:80px; overflow:hidden; margin:4px 0px 4px 0px;">None</div>
+Image sprite number to use :<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="sprite_num" type="text" value="1" size="3" maxlength="3">
+<div id="bt_image" style="width:100px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="update_img();return(false);" href="#"><strong>UPDATE IMAGE</strong></a></div>
+<div id="bt_prev_tile" class="sm_button" style="left:0px; "><a onclick="add_tile_num(-1);return(false);" href="#"><strong>&lt;</strong></a></div>
+<div id="bt_next_tile" class="sm_button" style="left:80px;"><a onclick="add_tile_num(1);return(false);" href="#"><strong>&gt;</strong></a></div>
+</div>
+<div style="position:absolute; top:220px; left:115px; width:auto;">
+<table width="" border="0" cellspacing="0" cellpadding="3">
+  <tr>
+    <td colspan="8">Animated? <input name="ck_anim" type="checkbox" id="ck_anim" value="checkbox" onclick="switch_anim();" onchange="save_lua()">
+    Enter frame numbers below</td>
+    </tr>
+  <tr>
+    <td>1:</td>
+    <td><input name="img_ani1" type="text" id="img_ani1" value="1" size="4" maxlength="3" disabled onchange="save_lua()"></td>
+    <td>2:</td>
+    <td><input name="img_ani2" type="text" id="img_ani2" value="2" size="4" maxlength="3" disabled onchange="save_lua()"></td>
+    <td>3:</td>
+    <td><input name="img_ani3" type="text" id="img_ani3" value="3" size="4" maxlength="3" disabled onchange="save_lua()"></td>
+    <td>4:      </td>
+    <td><input name="img_ani4" type="text" id="img_ani4" value="4" size="4" maxlength="3" disabled onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td>5:</td>
+    <td><input name="img_ani5" type="text" id="img_ani5" value="5" size="4" maxlength="3" disabled onchange="save_lua()"></td>
+    <td>6:</td>
+    <td><input name="img_ani6" type="text" id="img_ani6" value="6" size="4" maxlength="3" disabled onchange="save_lua()"></td>
+    <td>7:</td>
+    <td><input name="img_ani7" type="text" id="img_ani7" value="7" size="4" maxlength="3" disabled onchange="save_lua()"></td>
+    <td>8:</td>
+    <td><input name="img_ani8" type="text" id="img_ani8" value="8" size="4" maxlength="3" disabled onchange="save_lua()"></td>
+  </tr>
+</table>
+
+</div>
+<div style="position:absolute; top:145px; left:667px; width:auto;">
+<strong>TILE PROPERTIES</strong>
+<table width="410" border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td colspan="5"><div class="title">Required</div></td>
+    </tr>
+  <tr>
+    <td width="244"><strong>Tile type</strong></td>
+    <td width="20">&nbsp;</td>
+    <td colspan="3"><select name="s_type" onchange="switch_type();save_lua();">
+      <option value="0">0 (Floor)</option>
+      <option value="1">1 (Left wall)</option>
+      <option value="2">2 (Right wall)</option>
+      <option value="3">3 (Object)</option>
+    </select></td>
+  </tr>
+  <tr>
+    <td><strong>Armour</strong> (1-255) <br>
+      (255 = undestructible)</td>
+    <td>&nbsp;</td>
+    <td colspan="3"><input name="tx_armour" type="text" value="10" size="4" maxlength="3" onchange="save_lua()">        </td>
+  </tr>
+  <tr>
+    <td colspan="5"><div class="title">Movement</div></td>
+    </tr>
+  <tr>
+    <td><div id="walk_msg"><strong>Can walk</strong> on floor tile</div></td>
+    <td><input name="ck_walk" type="checkbox" onchange="save_lua()" onClick="switch_walk()" value="true" checked></td>
+    <td colspan="3">&nbsp;</td>
+  </tr>
+  <tr>
+    <td>TUs required to <strong>walk</strong></td>
+    <td>&nbsp;</td>
+    <td width="36"><input name="tx_tusw" type="text" id="tx_tusw" value="4" size="4" maxlength="2" onchange="save_lua()"></td>
+    <td colspan="2" rowspan="3" valign="top"><div id="walk_note"></div></td>
+  </tr>
+  <tr>
+    <td>TUs required to <strong>fly</strong></td>
+    <td>&nbsp;</td>
+    <td><input name="tx_tusf" type="text" id="tx_tusf" value="4" size="4" maxlength="2" onchange="save_lua()"></td>
+    </tr>
+  <tr>
+    <td>TUs required to <strong>slide</strong> (I.E. Snakemen)</td>
+    <td>&nbsp;</td>
+    <td><input name="tx_tuss" type="text" id="tx_tuss" value="4" size="4" maxlength="2" onchange="save_lua()"></td>
+    </tr>
+  <tr>
+    <td colspan="5"><div class="title">Essentials</div></td>
+    </tr>
+  <tr>
+    <td>Has <strong>destroyed state</strong> - Tile index</td>
+    <td><input name="ck_dest" type="checkbox" value="true" onClick="switch_dest()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_dest" type="text" value="1" size="4" disabled maxlength="4" onchange="save_lua()">
+    </td>
+  </tr>
+  <tr>
+    <td>Tile <strong>stops LOS </strong>(line of sight)</td>
+    <td><input name="ck_los" type="checkbox" value="true" onchange="save_lua()"></td>
+    <td colspan="3">&nbsp;</td>
+  </tr>
+  <tr>
+    <td><strong>Height</strong> <br>
+      (8 is max soldier step)</td>
+    <td><input name="ck_height" type="checkbox" id="ck_height" value="true" onclick="switch_height()" onchange="save_lua()"></td>
+    <td colspan="3"><select name="s_height" id="s_height" disabled onchange="save_lua()">
+      <option value="-24">24 (Full level)</option>
+      <option value="-23">23</option>
+	  <option value="-22">22</option>
+	  <option value="-21">21</option>
+      <option value="-20">20 (High slope)</option>
+	  <option value="-19">19</option>
+      <option value="-18">18</option>
+	  <option value="-17">17</option>
+      <option value="-16">16 (Upper stair)</option>
+	  <option value="-15">15</option>
+      <option value="-14">14</option>
+	  <option value="-13">13</option>
+      <option value="-12">12 (Med slope)</option>
+	  <option value="-11">11</option>
+      <option value="-10">10</option>
+	  <option value="-9">9</option>
+      <option value="-8">8 (Lower stair)</option>
+      <option value="-7">7</option>
+	  <option value="-6">6</option>
+	  <option value="-5">5</option>
+      <option value="-4">4 (Low slope)</option>
+	  <option value="-3">3</option>
+      <option value="-2">2</option>
+	  <option value="-1">1</option>
+      <option value="0" selected>0 (Floor)</option>
+    </select></td>
+  </tr>
+  <tr>
+    <td colspan="5"><div class="title">Pyrotechnics</div></td>
+  </tr>
+  <tr>
+    <td><strong>Can burn</strong> - Number of rounds</td>
+    <td><input name="ck_burn" type="checkbox" id="ck_burn" value="true" onclick="switch_burn()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_burn" type="text" disabled id="tx_burn" value="4" size="4" maxlength="3" onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td><strong>Can explode</strong> - Total damage - Type <br>
+      (0-255) </td>
+    <td><input name="ck_expl" type="checkbox" id="ck_expl" value="true" onclick="switch_expl()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_hestr" type="text" disabled id="tx_expl" value="60" size="4" maxlength="3" onchange="save_lua()">
+	<select name="s_expl" disabled onchange="save_lua();">
+      <option value="0" selected>0 (HE)</option>
+      <option value="1">1 (Smoke)</option>
+    </select></td>
+  </tr>
+  <tr>
+    <td>Tile <strong>blocks effect </strong></td>
+    <td><input name="ck_fire" type="checkbox" value="true" onchange="save_lua()"></td>
+    <td>Fire</td>
+    <td width="20"><input name="ck_smoke" type="checkbox" value="true" onChange="save_lua()"></td>
+    <td width="90">Smoke</td>
+  </tr>
+  <tr>
+    <td>Tile <strong>blocks smoke</strong></td>
+    <td>&nbsp;</td>
+    <td colspan="3">&nbsp;</td>
+  </tr>
+  <tr>
+    <td><strong>Shield from HE</strong> (0-255)<br>
+      (usually equal to armour)</td>
+    <td><input name="ck_heblock" type="checkbox" id="ck_heblock" value="true" onclick="switch_heblock()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_heblock" type="text" id="tx_heblock" value="0" size="4" disabled maxlength="3" onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td>Tile is a <strong>light source</strong> - Amount of light </td>
+    <td><input name="ck_light_s" type="checkbox" id="ck_light_s" value="true" onclick="switch_light_s()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_light_s" type="text" disabled id="tx_light_s" onchange="save_lua()" value="0" size="4" maxlength="3"></td>
+  </tr>	  
+  <tr>
+    <td>can <strong>block light</strong> - Amount (0-10)</td>
+    <td><input name="ck_light" type="checkbox" id="ck_light" value="true" onclick="switch_light()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_light" type="text" value="0" size="4" maxlength="3" disabled onchange="save_lua()">
+    (10 = opaque) </td>
+  </tr>
+  <tr>
+    <td colspan="5"><div class="title">Map features </div></td>
+    </tr>
+  <tr>
+    <td>Tile is a <strong>gravity lift</strong> (elevator) </td>
+    <td><input name="ck_grav" type="checkbox" id="ck_grav" value="true" onchange="save_lua()"></td>
+    <td colspan="3">&nbsp;</td>
+  </tr>
+  <tr>
+    <td>Tile is a <strong>door</strong> - alternate tile index </td>
+    <td><input name="ck_door" type="checkbox" id="ck_door" value="true" onclick="switch_door()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_door" type="text" disabled value="1" size="4" maxlength="4" onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td><span class="style4">Tile is a <strong>ufo door</strong> - alternate tile index <br>
+        (not implemented in ufo2000 yet)</span></td>
+    <td><input name="ck_ufodoor" type="checkbox" id="ck_ufodoor" value="true" onclick="switch_ufodoor()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_ufodoor" type="text" disabled value="1" size="4" maxlength="4" onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td colspan="5"><div class="title">Other  properties </div></td>
+  </tr>
+  <tr>
+    <td><strong>Draw</strong> tile higher (pixels : 0-24)</td>
+    <td><input name="ck_pheight" type="checkbox" id="ck_pheight" value="true" onclick="switch_pheight()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_pheight" type="text" disabled id="tx_pheight" value="0" size="4" maxlength="2" onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td><strong>Foosteps sound</strong> (unknown values)</td>
+    <td><input name="ck_foot" type="checkbox" id="ck_foot" value="true" onclick="switch_foot()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_foot" type="text" disabled id="tx_foot" value="0" size="4" maxlength="2" onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td>Tile only for <strong> flying units </strong>(no floor)<br>      </td>
+    <td><input name="ck_nofloor" type="checkbox" id="ck_nofloor" value="true" onchange="save_lua()"></td>
+    <td colspan="3">(Use at your own risk)</td>
+  </tr>
+  <tr>
+    <td colspan="5"><div class="bad_title">Deprecated or unknown use </div></td>
+    </tr>
+  <tr>
+    <td><span class="style4"><strong>Big_Wall</strong></span></td>
+    <td><input name="ck_Big_Wall" type="checkbox" id="ck_Big_Wall" value="true" onchange="save_lua()"></td>
+    <td colspan="3">&nbsp;</td>
+  </tr>
+  <tr>
+    <td><span class="style4"><strong>Flammable</strong></span></td>
+    <td><input name="ck_Flammable" type="checkbox" id="ck_Flammable" value="true" onclick="switch_Flammable()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_Flammable" type="text" disabled id="tx_Flammable" value="0" size="4" maxlength="2" onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td><span class="style4"><strong>Smoke_Blockage</strong></span></td>
+    <td><input name="ck_Smoke_Blockage" type="checkbox" id="ck_Smoke_Blockage" value="true" onclick="switch_Smoke_Blockage()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_Smoke_Blockage" type="text" disabled id="tx_Smoke_Blockage" value="0" size="4" maxlength="2" onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td><span class="style4"><strong>Target_Type</strong></span></td>
+    <td><input name="ck_Target_Type" type="checkbox" id="ck_Target_Type" value="true" onclick="switch_Target_Type()" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_Target_Type" type="text" disabled id="tx_Target_Type" value="0" size="4" maxlength="2" onchange="save_lua()"></td>
+  </tr>
+  <tr>
+    <td colspan="5">Other properties may exist</td>
+    </tr>
+</table>
+</div>
+<script language="JavaScript">
+<!--
+//Initialise divs
+draw_grid();
+draw_levels();
+draw_mini();
+//-->
+</script>
+<!-- Divs that show on top, must be placed after the javascript div creation calls -->
+<div id="img_full" style="position:absolute; top:10px; left:115px; border:3px solid #666699; overflow:visible; background-color:#EEEEEE; visibility:hidden; padding:10px;">&nbsp;</div>
+<div id="lua_dialog" style="position:absolute; top:15px; left:20px; padding:20px 20px 180px 20px; width:1020px; border:1px solid #666699; background-color: #EEEEEE; visibility: hidden;">
+      <strong>LUA INPUT/OUTPUT</strong><br>
+		This window updates automatically.<br><br>
+      <strong>Saving :</strong> Copy the following LUA code and paste it in a .lua file to save your tileset.<br>
+      <strong>Loading :</strong> Erase the current dialog contents, copy your existing LUA code and paste it in the dialog, then press the "LOAD TILESET" button to load a tileset in the editor.<br>
+      <strong>Editing :</strong> (Advanced users only) Edit manually the LUA file from this dialog, press LOAD TILESET to update the tileset in the editor. Be very careful on syntax. <br>
+	  <div id="bt_load" style="width:100px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="load_lua();update_lua();change_tile(0);return(false);" href="#"><strong>LOAD TILESET</strong></a></div>
+<br>
+
+<textarea style="background-color:#FFFFFF; font-size:12px;" name="lua_text" id="lua_text" cols="140" rows="40"></textarea>
+</div>
+</form>
+<script language="JavaScript">
+<!--
+//Initialise application
+update_levels();
+update_grid();
+update_mini();
+update_lua();
+//Corrects a little bug with selection fields disabled property
+switch_height();
+switch_type();
+switch_expl();
+//-->
+</script>
+<div id="bt_help" class="button" style="top:10px; left:1000px; background-color:#CCCCFF;"><a onclick="toggle_help();return(false);"  href="#"><strong>HELP</strong></a></div>
+<div id="bt_lua_in_out" class="lua_button" style="top:10px; left:800px; background-color:#FFFFFF;"><a onclick="toggle_lua_dialog();return(false);" href="#"><strong>LUA INPUT / OUTPUT DIALOG</strong></a></div>
+<div id="h_win" style="position:absolute; top:30px; left:026px; width:1024px; height:725px; overflow:auto; padding:5px 12px 5px 12px; border:1px solid #666699; background-color:#EEEEFF; visibility:visible;">
+  <p><strong>Nachtwolf's tileset editor, version 2.0 </strong></p>
+<p><strong>HOW TO USE THIS TOOL</strong></p>
+<p><strong>1. Getting started<br>
+  </strong><br>
+  Make sure your PNG sprite images are properly formatted, for the moment this editor supports only 32x40 sprites. Look at existing image if you don't know the sprite format to use. <br>
+  Create an extension folder for your terrain. (I.E. terrain-europa) under your &quot;UFO2000 Beta\extensions&quot; folder. <br>
+Note the location of your png image.<br>
+create a blank .lua file. <br>
+Start the tileset editor.<br>
+<u>MAKE SURE YOU DON'T HIT REFRESH</u> : The tileset editor is web-based, that means it will reset if you refresh the page. </p>
+<p><strong>2. Setup Main Settings<br>
+  </strong><u><br>
+  Current Extension path</u> : the folder where the PNG images of the tileset you want to modify are located.<br>
+  <u>Tileset name</u> : name of your tileset.<br>
+  <u>Author (- email)</u> : Your name and email (optionnal) so that you can get credit for the tileset you made. <br>
+  <br>
+  (I.E. Tileset uses the image file &quot;europa.png&quot; which is located at C:\UFO2000 Beta\extensions\terrain-europa\europa.png : Main Setting would then read &quot;C:\UFO2000 Beta\extensions\terrain-europa&quot; as 
+    
+
+ Current Extension path, &quot;Europa&quot; as 
+  
+
+ Tileset name and &quot;Nachtwolf&quot; as Author (- email) ).<br>
+  <br>
+  <strong>3. Import / start from scratch<br>
+  </strong><br>
+  If you have an existing LUA file you wish to work from, open the <u>LUA input / output dialog</u>. Follow the instructions for Loading, then close the dialog.<br>
+  If you prefer starting from scratch then you have a 1 tile tileset with a blank floor tile ready in the editor. </p>
+<p><strong>4. Manage tiles </strong><br>
+  <br>
+  In the editor, using the white bar, you may add, delete or browse through tiles. <br>
+  <u>Tile index</u> : (current tile / total tiles)<br>
+<u>Editor Name</u> : You can give a name to your tile so that you can find it easily when browsing.<br>
+  <u>Add Tile</u> : This button will add one tile after all other tiles. <br>
+<u>Add Tile</u> : This button will add one tile after all other tiles. </p>
+<p><strong>5. Tile image<br>
+  <br>
+</strong>Use this area to define which png sprite your image will use.<br>
+<u>Path of image file to use</u> : path to image from current extension folder (I.E. for image defined at 2. &quot;europa.png&quot; would be the Path of image file to use).<br>
+<u>Image view window</u> : This gives a preview of the png sprite. You may see the whole image with a rollover on the preview.<br>
+<u>Animated?</u> : If checked, the current tile's image will be a sprite list, thus defining an animation, write the different frame's sprite numbers in the 8 text fields, <u>all 8 values are required</u>, repeat a frame if you do not have enough sprites to fill all 8 values. Only the first frame will be shown on the preview window. <br>
+<u>Image sprite number to use</u> : defines the sprite number if only one image is needed. Use arrows to change the number or edit manually.</p>
+<p><strong>6. Minimap image<br>
+  <br>
+</strong>This consists of 8 text fields in which you can enter color hexadecimal values (000000 to FFFFFF).<br>
+A preview of the minimap tile is also provided as it will be seen on the game's minimap.<br> 
+<u>Update image</u> : This will update the preview if needed.</p>
+<p><strong>7. Tile properties<br>
+</strong>Use this section to define which properties your tile has, read the property descriptions to know more. </p>
+<p><strong>8. Shape editing </strong>(Shape tools, tile units grid, tile levels)<br>
+  <br>
+  This defines the 3D shape uses to compute LOS (line of sight). <br>
+  <u>Tile units grid</u> : Click on any tile unit to empty or fill this location (16x16 total, horizontal and depth dimensions).<br>
+  <u>Tile levels</u> : Click on any level to edit this level (12 total, vertical dimension).<br>
+  <u>Shape tools</u> :  Use any of these to edit the tile units grid. <br>
+  <u><em>Square</em></u> : Click to activate, click on first corner, click on second corner, the rectangle area between those two corners will be inverted.<br> 
+  <u><em>Level</em></u> : Inverts the whole level, empty units are filled and filled units are emptied. <br>
+  <u><em>Rotate 90</em></u> : rotates the current level grid 90 degrees clockwise.<br>
+<u><em>Mirror X</em></u> : Mirrors the current level grid horizontally.<br>
+<u><em>Mirror Y</em></u> : Mirrors the current level grid vertcially.<br>
+<u><em>Clear</em></u> : Sets the whole current level grid to empty.<br>
+  <br>
+  A tile has the following size : width 16 x depth 16 x height 12. <br>
+16 x 16 being the grid on the right, 12 being the levels on the left.<br>
+<br>
+In the battlescape, the tile grid would be seen from the bottom left. That means the tile grid is tilted 45 degrees clockwise to make editing easier.<br>
+<br>
+To make a tile transparency shape, select a level to edit. Then paint the tile grid. Color means the object is filled at this location. Edit all levels until you have the desired 3D shape. </p>
+<p><strong>KNOWN ISSUES </strong></p>
+<p><strong>Issue # 001</strong> : This tool is not compatible with old browsers such as Netscape 4.x. I recommend you use mozilla firefox. <br>
+    <br>
+    <strong>Issue # 002</strong> : You must activate javascript in order to use this tool. <br>
+  <br>
+  <strong>Issue # 003</strong> : When you have just changed the extension path or image path and you click on UPDATE IMAGE, you may get a warning that the image is not found even if the path is actually correct. Fix : Simply click again on UPDATE IMAGE, bug doesn't occur on following attempts.<br>
+  <br>
+  <strong>Issue # 004</strong> : 
+  You must copy/paste from the LUA input/output dialog to save your tileset.<br>
+  <br>
+  <strong>Issue # 005</strong> : You might get weird results or errors if you load two different tilesets in the same session, restart the navigator to make sure.<br>
+  <br>
+  <strong>Issue # 006</strong> : Browsing through tiles is not exactly an instant process.<br>
+  <br>
+  If you encounter a bug, or have ideas for new features, please contact merc_graphics@hotmail.com.<br>
+  <br>
+  <strong>CREDITS </strong><br>
+  This javascript map tile tool for UFO2000 map making has been designed and programmed by Nachtwolf (Vincent), email: merc_graphics@hotmail.com </p>
+<p><strong><a href="#" onclick="toggle_help();">Click to close help window </a></strong></p>
+</div>
+<div id="loading" style="position:absolute; top:250px; left:80px; border:3px solid #666699; overflow:visible; background-color:#FFFFFF; visibility:hidden; padding:50px; width:800px; font-weight:bold;">
+  <div align="center" class="style2">Loading LUA, please wait...</div>
+</div>
+</body>
+</html>

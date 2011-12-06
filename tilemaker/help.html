@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Untitled Document</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<style type="text/css">
+<!--
+body,td,th {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+}
+-->
+</style></head>
+
+<body>
+<p><strong>Nachtwolf's tileset editor, version 2.0 </strong></p>
+<p><strong>HOW TO USE THIS TOOL</strong></p>
+<p><strong>1. Getting started<br>
+  </strong><br>
+  Make sure your PNG sprite images are properly formatted, for the moment this editor supports only 32x40 sprites. Look at existing image if you don't know the sprite format to use. <br>
+  Create an extension folder for your terrain. (I.E. terrain-europa) under your &quot;UFO2000 Beta\extensions&quot; folder. <br>
+Note the location of your png image.<br>
+create a blank .lua file. <br>
+Start the tileset editor.<br>
+<u>MAKE SURE YOU DON'T HIT REFRESH</u> : The tileset editor is web-based, that means it will reset if you refresh the page. </p>
+<p><strong>2. Setup Main Settings<br>
+  </strong><u><br>
+  Current Extension path</u> : the folder where the PNG images of the tileset you want to modify are located.<br>
+  <u>Tileset name</u> : name of your tileset.<br>
+  <u>Author (- email)</u> : Your name and email (optionnal) so that you can get credit for the tileset you made. <br>
+  <br>
+  (I.E. Tileset uses the image file &quot;europa.png&quot; which is located at C:\UFO2000 Beta\extensions\terrain-europa\europa.png : Main Setting would then read &quot;C:\UFO2000 Beta\extensions\terrain-europa&quot; as 
+    
+
+ Current Extension path, &quot;Europa&quot; as 
+  
+
+ Tileset name and &quot;Nachtwolf&quot; as Author (- email) ).<br>
+  <br>
+  <strong>3. Import / start from scratch<br>
+  </strong><br>
+  If you have an existing LUA file you wish to work from, open the <u>LUA input / output dialog</u>. Follow the instructions for Loading, then close the dialog.<br>
+  If you prefer starting from scratch then you have a 1 tile tileset with a blank floor tile ready in the editor. </p>
+<p><strong>4. Manage tiles </strong><br>
+  <br>
+  In the editor, using the white bar, you may add, delete or browse through tiles. <br>
+  <u>Tile index</u> : (current tile / total tiles)<br>
+<u>Editor Name</u> : You can give a name to your tile so that you can find it easily when browsing.<br>
+  <u>Add Tile</u> : This button will add one tile after all other tiles. <br>
+<u>Add Tile</u> : This button will add one tile after all other tiles. </p>
+<p><strong>5. Tile image<br>
+  <br>
+</strong>Use this area to define which png sprite your image will use.<br>
+<u>Path of image file to use</u> : path to image from current extension folder (I.E. for image defined at 2. &quot;europa.png&quot; would be the Path of image file to use).<br>
+<u>Image view window</u> : This gives a preview of the png sprite. You may see the whole image with a rollover on the preview.<br>
+<u>Animated?</u> : If checked, the current tile's image will be a sprite list, thus defining an animation, write the different frame's sprite numbers in the 8 text fields, <u>all 8 values are required</u>, repeat a frame if you do not have enough sprites to fill all 8 values. Only the first frame will be shown on the preview window. <br>
+<u>Image sprite number to use</u> : defines the sprite number if only one image is needed. Use arrows to change the number or edit manually.</p>
+<p><strong>6. Minimap image<br>
+  <br>
+</strong>This consists of 8 text fields in which you can enter color hexadecimal values (000000 to FFFFFF).<br>
+A preview of the minimap tile is also provided as it will be seen on the game's minimap.<br> 
+<u>Update image</u> : This will update the preview if needed.</p>
+<p><strong>7. Tile properties<br>
+</strong>Use this section to define which properties your tile has, read the property descriptions to know more. </p>
+<p><strong>8. Shape editing </strong>(Shape tools, tile units grid, tile levels)<br>
+  <br>
+  This defines the 3D shape uses to compute LOS (line of sight). <br>
+  <u>Tile units grid</u> : Click on any tile unit to empty or fill this location (16x16 total, horizontal and depth dimensions).<br>
+  <u>Tile levels</u> : Click on any level to edit this level (12 total, vertical dimension).<br>
+  <u>Shape tools</u> :  Use any of these to edit the tile units grid. <br>
+  <u><em>Square</em></u> : Click to activate, click on first corner, click on second corner, the rectangle area between those two corners will be inverted.<br> 
+  <u><em>Level</em></u> : Inverts the whole level, empty units are filled and filled units are emptied. <br>
+  <u><em>Rotate 90</em></u> : rotates the current level grid 90 degrees clockwise.<br>
+<u><em>Mirror X</em></u> : Mirrors the current level grid horizontally.<br>
+<u><em>Mirror Y</em></u> : Mirrors the current level grid vertcially.<br>
+<u><em>Clear</em></u> : Sets the whole current level grid to empty.<br>
+  <br>
+  A tile has the following size : width 16 x depth 16 x height 12. <br>
+16 x 16 being the grid on the right, 12 being the levels on the left.<br>
+<br>
+In the battlescape, the tile grid would be seen from the bottom left. That means the tile grid is tilted 45 degrees clockwise to make editing easier.<br>
+<br>
+To make a tile transparency shape, select a level to edit. Then paint the tile grid. Color means the object is filled at this location. Edit all levels until you have the desired 3D shape. </p>
+<p><strong>KNOWN ISSUES </strong></p>
+<p><strong>Issue # 001</strong> : This tool is not compatible with old browsers such as Netscape 4.x. I recommend you use mozilla firefox. <br>
+    <br>
+    <strong>Issue # 002</strong> : You must activate javascript in order to use this tool. <br>
+  <br>
+  <strong>Issue # 003</strong> : When you have just changed the extension path or image path and you click on UPDATE IMAGE, you may get a warning that the image is not found even if the path is actually correct. Fix : Simply click again on UPDATE IMAGE, bug doesn't occur on following attempts.<br>
+  <br>
+  <strong>Issue # 004</strong> : 
+  You must copy/paste from the LUA input/output dialog to save your tileset.<br>
+  <br>
+  <strong>Issue # 005</strong> : You might get weird results or errors if you load two different tilesets in the same session, restart the navigator to make sure.<br>
+  <br>
+  <strong>Issue # 006</strong> : Browsing through tiles is not exactly an instant process.<br>
+  <br>
+  If you encounter a bug, or have ideas for new features, please contact merc_graphics@hotmail.com.<br>
+  <br>
+  <strong>CREDITS </strong><br>
+  This javascript map tile tool for UFO2000 map making has been designed and programmed by Nachtwolf (Vincent), email: merc_graphics@hotmail.com </p>
+</body>
+</html>
