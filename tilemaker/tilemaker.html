@@ -50,7 +50,7 @@ input,select,option {
 .sm_button {
     position:absolute;
     text-align:center;
-    top:172px;
+    top:179px;
     padding:0px;
     border:1px solid #666699;
     background-color:#FFFFFF;
@@ -117,13 +117,15 @@ a:active {
 <br>
 <script language="JavaScript">
 <!--
-//Globales modifiables
+//Changing Globals
+var g_init = true;
 var g_lvl = 0;
 var g_tile = 1;
 var g_active_tiles = 1;
-//Globales constantes
+var g_bool_ignore_img_warn = false;
+//Static Globals
 var g_max_tiles = 255;
-// Initialisation des Arrays
+// Initialisation : Arrays
 var a_mini = new Array(16);
 	for(a_m = 0; a_m < 16; a_m++) {
 		a_mini[a_m] = "000000";
@@ -164,6 +166,8 @@ var x_1 = 0;
 var y_1 = 0;
 var x_2 = 0;
 var y_2 = 0;
+//Not initial calls anymore
+g_init = false;
 //-----------------------------------------------------------------------------------------------------
 
 //TILE FUNCTIONS
@@ -185,6 +189,28 @@ function change_tile(int_n) {
 	};
 	get_lua();
 };
+//Jumps to an active tile
+function jump_tile() {
+	var str_out = "";
+	var str_jump_to = prompt("Which sprite index?");
+	if (isNaN(str_jump_to)){
+		alert("Cannot update, tile number entered by user (" + str_jump_to + ") is not a number.");
+	}else {
+		str_jump_to = parseInt(str_jump_to);
+		if ((str_jump_to) > 0 && (str_jump_to) <= g_max_tiles && (str_jump_to) <= g_active_tiles) {
+			str_out = (str_jump_to) + "";
+			g_tile = str_jump_to;
+			while (str_out.length < 3) {
+				str_out = "a" + str_out;
+			};
+			str_out = str_out.replace(/a/g,"&nbsp;")
+			document.getElementById("tx_num").innerHTML = str_out;
+		}else {
+			alert("Cannot update, tile number outside boundaries (1 to " + g_active_tiles + " active tiles).\nClick \"ADD TILE\" to make a new active tile , maximum is "+ g_max_tiles + ".");
+		};
+		get_lua();
+	};
+};
 //Adds an active tile
 function add_tile() {
 	var str_out = "";
@@ -196,6 +222,7 @@ function add_tile() {
 		}
 		str_out = str_out.replace(/a/g,"&nbsp;")
 		document.getElementById("tx_max").innerHTML = str_out;
+		g_a_tile_info[g_active_tiles - 1] = init_tile();
 		update_lua();
 	}else {
 		alert("Cannot add active tile, limit reached.\nMaximum is "+ g_max_tiles + ".");
@@ -206,7 +233,19 @@ function delete_tile() {
 	var str_out = "";
 	var a_temp = new Array(g_max_tiles);
 	if (g_active_tiles - 1 >= 1) {
-		if (confirm("This will delete tile " + g_active_tiles + " , continue?")) {
+		if (confirm("This will delete tile " + g_tile + " , continue?")) {
+			for (k = 1; k <= g_active_tiles; k++) {
+				if (k >= g_tile){
+					g_a_tile_info[(k - 1)] = g_a_tile_info[k];
+				}else{
+					g_a_tile_info[(k - 1)] = g_a_tile_info[(k - 1)];
+				};
+			};
+			if (g_tile == 1) {
+				g_tile = 1;
+			}else {
+				change_tile(-1);
+			};
 			g_active_tiles = g_active_tiles - 1;
 			str_out = g_active_tiles + "";
 			while (str_out.length < 3) {
@@ -224,8 +263,16 @@ function delete_tile() {
 //Creates a blank tile template
 function init_tile() {
 	var str_init = "";
+	var str_img_name = "";
 	str_init = str_init + '            EditorName = "Blank floor tile",\n';
-	str_init = str_init + '            IsometricImage = png_image("$(extension)/image/32x40-001.png"),\n';
+	if (g_init == false) {
+		str_img_name = document.f_text.image_name.value;
+	};
+	if ((str_img_name != "") && (str_img_name.indexOf(".") != -1) && (str_img_name.indexOf(".") < str_img_name.length)) {
+		str_init = str_init + '            IsometricImage = png_image("$(extension)/' + str_img_name.substring(0, str_img_name.indexOf(".")) + '/32x40-001.png"),\n';
+	}else {
+		str_init = str_init + '            IsometricImage = png_image("$(extension)/image/32x40-001.png"),\n';
+	};
 	str_init = str_init + '            Shape = [[\n'
 	for (i = 0; i < 11; i++){
 		str_init = str_init + '                0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,0000,\n';
@@ -443,6 +490,168 @@ function mirror_y_lvl() {
 	update_grid();
     save_lua();
 };
+//makes a predefined shape
+function make_shape(_type) {
+	//Values for each level : x-min, x-max, y-min, y-max
+	var a_bound = new Array(12);
+	for (i = 0; i < 12; i++){
+	a_bound[i] = new Array(4);
+	}
+	//Make boundaries
+	switch (_type) {
+		case 0 :
+			for (j = 1; j < 12; j++){
+				a_bound[j][0] = 16;
+				a_bound[j][1] = 16;
+				a_bound[j][2] = 16;
+				a_bound[j][3] = 16;
+			};
+			a_bound[0][0] = 0;
+			a_bound[0][1] = 0;
+			a_bound[0][2] = 15;
+			a_bound[0][3] = 15;
+			break;
+		case 1 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 1;
+			};
+			break;
+		case 2 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 14;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			break;
+		case 3 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 14;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 1;
+			};
+			break;
+		case 4 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			break;
+		case 5 :
+			for (j = 0; j < 6; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			for (j = 6; j < 12; j++){
+				a_bound[j][0] = 16;
+				a_bound[j][1] = 16;
+				a_bound[j][2] = 16;
+				a_bound[j][3] = 16;
+			};
+			break;
+		case 6 :
+			for (j = 0; j < 6; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			a_bound[0][0] = 1;
+			a_bound[1][0] = 3;
+			a_bound[2][0] = 6;
+			a_bound[3][0] = 9;
+			a_bound[4][0] = 11;
+			a_bound[5][0] = 14;
+			for (j = 6; j < 12; j++){
+				a_bound[j][0] = 16;
+				a_bound[j][1] = 16;
+				a_bound[j][2] = 16;
+				a_bound[j][3] = 16;
+			};
+			break;
+		case 7 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			a_bound[6][0] = 1;
+			a_bound[7][0] = 4;
+			a_bound[8][0] = 7;
+			a_bound[9][0] = 9;
+			a_bound[10][0] = 11;
+			a_bound[11][0] = 14;
+			break;
+		case 8 :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			a_bound[6][3] = 14;
+			a_bound[7][3] = 11;
+			a_bound[8][3] = 8;
+			a_bound[9][3] = 6;
+			a_bound[10][3] = 4;
+			a_bound[11][3] = 1;
+			break;
+		case 9 :
+			for (j = 0; j < 6; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			a_bound[0][3] = 14;
+			a_bound[1][3] = 12;
+			a_bound[2][3] = 9;
+			a_bound[3][3] = 6;
+			a_bound[4][3] = 4;
+			a_bound[5][3] = 1;
+			for (j = 6; j < 12; j++){
+				a_bound[j][0] = 16;
+				a_bound[j][1] = 16;
+				a_bound[j][2] = 16;
+				a_bound[j][3] = 16;
+			};
+			break;
+		default :
+			for (j = 0; j < 12; j++){
+				a_bound[j][0] = 0;
+				a_bound[j][1] = 0;
+				a_bound[j][2] = 15;
+				a_bound[j][3] = 15;
+			};
+			break;
+	};
+	//Redraw Shape then clear and affect for each level
+	for (lv = 0; lv < 12; lv++) {
+		for (j = 0; j < 16; j++) {
+			for (k = 0; k < 16; k++) {
+				a_tiles[lv][j][k] = false;
+			};
+		};
+		if (a_bound[lv][0] != 16){
+			for (l = a_bound[lv][0]; l <= a_bound[lv][2]; l++) {
+				for (m = a_bound[lv][1]; m <= a_bound[lv][3]; m++) {
+					a_tiles[lv][l][m] = true;
+				};
+			};
+		};
+	};
+	update_grid();
+    save_lua();
+};
 //-----------------------------------------------------------------------------------------------------
 
 //MINIMAP RELATED FUNCTIONS
@@ -515,15 +724,19 @@ function update_img() {
 		}else {
 			document.getElementById("png_sprite").innerHTML = 'None';
 			document.getElementById("img_full").innerHTML = '&nbsp;';
-			if (imgt.width == 0) {
-				if (confirm('Warning : Image not found. Please check Extension path and Image path\n\nKnown bug #003 : If you have just changed paths, retry once.\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
-					save_lua();
+			if (!g_bool_ignore_img_warn) {
+				if (imgt.width == 0) {
+					if (confirm('Warning : Image not found. Please check Extension path and Image path\n\nKnown bug #003 : If you have just changed paths, retry once.\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+						save_lua();
+					};
+				}else {
+            		if (confirm('Warning : Cannot update image, sprite number outside image boundaries\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
+						save_lua();
+					};
 				};
 			}else {
-            	if (confirm('Warning : Cannot update image, sprite number outside image boundaries\n\nClick "OK" to ignore and continue, "Cancel" to abort.')) {
-					save_lua();
-				};
-			}
+				save_lua();
+			};
         };
     };
 };
@@ -543,6 +756,45 @@ function add_tile_num(int_n) {
         };
     };
     update_img();
+};
+
+function update_3d_preview() {
+	var str_color = "";
+	var _x;
+	var _y;
+	a_imgs = new Array(40);
+	for (y = 0; y < 40; y++){
+		a_imgs[y] = new Array(32);
+		for (x = 0; x < 32; x++){
+			a_imgs[y][x] = 0;
+		};
+	};
+	for (i = 0; i < 12; i++){
+		for (j = 0; j < 16; j++){
+			for (k = 0; k < 16; k++){
+				_y = 7 + (i * 2) - Math.floor((j / 2)) + Math.floor(k / 2);
+				_x = 0 + 2 * Math.floor((j + 1) / 2) + k;
+				if (a_tiles[11-i][j][k]) {
+					//a_imgs[_y][_x] = a_imgs[_y][_x] + 1;
+					a_imgs[_y+1][_x] = a_imgs[_y+1][_x] + 1;
+					a_imgs[_y+2][_x] = a_imgs[_y+2][_x] + 1;
+				}
+			};
+		};
+	};
+	for (y = 0; y < 40; y++){
+		for (x = 0; x < 32; x++){
+			if (a_imgs[y][x] != 0) {
+				//document.getElementById('3d_prev_' + y + '_' + x ).style.backgroundColor = "#" + (a_imgs[y][x] * 6) + "" + (a_imgs[y][x] * 6) + "" + (a_imgs[y][x] * 6);
+				str_color = "#" + a_hex[14 - Math.floor(a_imgs[y][x] / 2)] + "" + a_hex[14-Math.floor(a_imgs[y][x] / 2)];
+				str_color = str_color + a_hex[14 - Math.floor(a_imgs[y][x] / 2)] + "" + a_hex[14-Math.floor(a_imgs[y][x] / 2)];
+				str_color = str_color + a_hex[14 - Math.floor(a_imgs[y][x] / 3)] + "" + a_hex[14-Math.floor(a_imgs[y][x] / 3)];
+				document.getElementById('3d_prev_' + y + '_' + x ).style.backgroundColor = str_color;
+			}else {
+				document.getElementById('3d_prev_' + y + '_' + x ).style.backgroundColor = "#FFFFFF";
+			};
+		}
+	}
 };
 
 //-----------------------------------------------------------------------------------------------------
@@ -1074,6 +1326,8 @@ function load_lua() {
 						end_trim = g_a_tile_info[i].indexOf('}')
 					}
 					g_a_tile_info[i] = g_a_tile_info[i].substring(0,end_trim);
+					//should replace trailing spaces
+					g_a_tile_info[i] = g_a_tile_info[i].replace(/\s*$/g,"") + "\n";
 					//End while clause and set general properties
 					g_active_tiles = (i + 1);
 					g_tile = 1;
@@ -1088,6 +1342,8 @@ function load_lua() {
 						end_trim = g_a_tile_info[i].indexOf('}')
 					}
 					g_a_tile_info[i] = g_a_tile_info[i].substring(0,end_trim);
+					//should replace trailing spaces
+					g_a_tile_info[i] = g_a_tile_info[i].replace(/\s*$/g,"") + "\n";
 				};
 			}else {
 				err = "Expected tile index [" + (i + 1) + "] not found, cannot load less than one tile.\nTiles must be ordered as 1,2,3,[...],n.";
@@ -1435,6 +1691,13 @@ function switch_anim() {
 		document.f_text.sprite_num.disabled = false;
     };
 };
+function switch_img_warn() {
+    if (document.f_text.ck_img_warn.checked) {
+        g_bool_ignore_img_warn = true;
+    }else {
+        g_bool_ignore_img_warn = false;
+    };
+};
 //-->
 </script>  
 </head>
@@ -1448,7 +1711,39 @@ function switch_anim() {
 <div id="bt_clear" class="button" style="top:520px;"><a onclick="clear_lvl();return(false);" href="#"><strong>CLEAR</strong></a></div>
 <div style="position:absolute; top:375px; left:40px;"><strong>SHAPE TOOLS</strong></div>
 <div style="position:absolute; top:375px; left:140px; width: auto;"><strong>TILE UNITS GRID</strong> (White = empty, Blue = filled)</div>
-<div style="position:absolute; top:375px; left:470px;"><strong>TILE LEVELS</strong></div>
+<div style="position:absolute; top:375px; left:470px;"><strong>TILE LEVELS</strong></div><br>
+<div style="position:absolute; top:613px; left:540px;"><strong>3D Preview</strong><br>
+<a href="#" onclick="update_3d_preview();return(false);">Update</a></div>
+<div style="position:absolute; top:613px; left:470px; width: 64px; height: 80px; border:1px solid #666699;">
+<script language="JavaScript">
+<!--
+for (i = 0; i < 40; i++) {
+	if (i != 0) {
+		document.write("<br>");
+	};
+	for (j = 0; j < 32; j++) {
+		document.write('<div id="3d_prev_' + i + '_' + j + '" style="position: absolute; top: ' + (i * 2) + 'px; left:' + (j * 2) + 'px; width: 2px; height: 2px;" ><img src="blank.gif" width="2" height="2" border="0"></div>');
+	};
+};
+//-->
+</script>
+</div>
+<div style="position:absolute; top:702px; left:13px; width: 651px; Height: 110px; overflow: hidden;">
+<strong>SHAPE TEMPLATES </strong> (Choose one to change shape)<br>
+<img src="shapes.gif" alt="Shapes" border="0" usemap="#Map">
+<map name="Map">
+  <area shape="rect" coords="1,1,65,97" href="#" onclick="make_shape(0);return(false);">
+  <area shape="rect" coords="66,1,130,97" href="#" onclick="make_shape(1);return(false);">
+  <area shape="rect" coords="131,1,195,97" href="#" onclick="make_shape(2);return(false);">
+  <area shape="rect" coords="196,1,260,97" href="#" onclick="make_shape(3);return(false);">
+  <area shape="rect" coords="261,1,325,97" href="#" onclick="make_shape(4);return(false);">
+  <area shape="rect" coords="326,1,390,97" href="#" onclick="make_shape(5);return(false);">
+  <area shape="rect" coords="391,1,455,97" href="#" onclick="make_shape(6);return(false);">
+  <area shape="rect" coords="456,1,520,97" href="#" onclick="make_shape(7);return(false);">
+  <area shape="rect" coords="521,1,585,97" href="#" onclick="make_shape(8);return(false);">
+  <area shape="rect" coords="586,1,650,97" href="#" onclick="make_shape(9);return(false);">
+</map>
+</div>
 <form action="" method="get" name="f_text" id="f_text">
 <div style="position:absolute; top:15px; left:40px;">
 <strong>MAIN SETTINGS</strong>
@@ -1468,9 +1763,10 @@ function switch_anim() {
 <strong>SELECT TILE TO EDIT :</strong><br>
 <img src="blank.gif" width="500" height="5" ><br>
 <div class="nav"><a href="#" onclick="change_tile(-1);return(false);"><strong>&lt; PREV</strong></a></div>
-<div class="nav" style="left:520px;"><a onclick="change_tile(1);return(false);" href="#"><strong>NEXT &gt;</strong></a></div>
-<div class="nav" style="left:620px;"><a onclick="add_tile();return(false);" href="#"><strong>ADD TILE</strong></a></div>
-<div class="nav" style="left:720px;"><a onclick="delete_tile();return(false);" href="#"><strong>DELETE</strong></a></div>
+<div class="nav" style="left:520px;"><a onclick="change_tile(1);return(false);" href="#"><strong>NEXT &gt;</strong></a></div><br>
+<div class="nav" style="left:610px;"><a onclick="jump_tile();return(false);" href="#"><strong>JUMP TO</strong></a></div>
+<div class="nav" style="left:720px;"><a onclick="add_tile();return(false);" href="#"><strong>ADD TILE</strong></a></div>
+<div class="nav" style="left:820px;"><a onclick="delete_tile();return(false);" href="#"><strong>DELETE</strong></a></div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Tile Index : <span id="tx_num">&nbsp;&nbsp;1</span>/<span id="tx_max">&nbsp;&nbsp;1</span> Editor name : <input name="tx_tile_name" type="text" value="Blank floor tile" size="30" maxlength="30" onchange="save_lua()">
 </div>
 <div style="position:absolute; top:145px; left:425px;">
@@ -1496,14 +1792,20 @@ Hex color values :<br>
 <div id="bt_minimap" style="width:100px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="update_mini();return(false);" href="#"><strong>UPDATE IMAGE</strong></a></div>
 </div>
 <div style="position:absolute; top:145px; left:40px; width:auto;">
-<strong>TILE IMAGE</strong><br>
+<table border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><strong>TILE IMAGE</strong>&nbsp;(</td>
+    <td><input name="ck_img_warn" type="checkbox" value="true" onclick="switch_img_warn()"></td>
+    <td>Ignore image not found warnings)</td>
+  </tr>
+</table>
 <br>
 Path of image file to use (click UPDATE IMAGE to load):<br>
-<input name="image_name" type="text" value="image.png" size="50"><br>
+<input name="image_name" type="text" value="image.png" size="50" onchange="save_lua();"><br>
 (Relative to extension folder, format : (subfolder\)file.ext)<br>
 <div id="png_sprite" style="border:1px solid #666699; width:64px; height:80px; overflow:hidden; margin:4px 0px 4px 0px;">None</div>
 Image sprite number to use :<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="sprite_num" type="text" value="1" size="3" maxlength="3">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="sprite_num" type="text" value="1" size="3" maxlength="3" onchange="save_lua();">
 <div id="bt_image" style="width:100px; border:1px solid #666699; padding:2px; background-color:#FFFFFF;"><a onclick="update_img();return(false);" href="#"><strong>UPDATE IMAGE</strong></a></div>
 <div id="bt_prev_tile" class="sm_button" style="left:0px; "><a onclick="add_tile_num(-1);return(false);" href="#"><strong>&lt;</strong></a></div>
 <div id="bt_next_tile" class="sm_button" style="left:80px;"><a onclick="add_tile_num(1);return(false);" href="#"><strong>&gt;</strong></a></div>
@@ -1648,22 +1950,18 @@ Image sprite number to use :<br>
     </select></td>
   </tr>
   <tr>
-    <td>Tile <strong>blocks effect </strong></td>
+    <td class="style4">Tile <strong>blocks effect </strong>(not supported) </td>
     <td><input name="ck_fire" type="checkbox" value="true" onchange="save_lua()"></td>
-    <td>Fire</td>
+    <td><span class="style4">Fire</span></td>
     <td width="20"><input name="ck_smoke" type="checkbox" value="true" onChange="save_lua()"></td>
-    <td width="90">Smoke</td>
+    <td width="90"><span class="style4">Smoke</span></td>
   </tr>
   <tr>
-    <td>Tile <strong>blocks smoke</strong></td>
-    <td>&nbsp;</td>
-    <td colspan="3">&nbsp;</td>
-  </tr>
-  <tr>
-    <td><strong>Shield from HE</strong> (0-255)<br>
+    <td class="style4"><strong>Shield from HE</strong> (0-255)<br>
       (usually equal to armour)</td>
     <td><input name="ck_heblock" type="checkbox" id="ck_heblock" value="true" onclick="switch_heblock()" onchange="save_lua()"></td>
-    <td colspan="3"><input name="tx_heblock" type="text" id="tx_heblock" value="0" size="4" disabled maxlength="3" onchange="save_lua()"></td>
+    <td colspan="3"><input name="tx_heblock" type="text" id="tx_heblock" value="0" size="4" disabled maxlength="3" onchange="save_lua()">
+      <span class="style4">    (not supported)</span></td>
   </tr>
   <tr>
     <td>Tile is a <strong>light source</strong> - Amount of light </td>
@@ -1751,7 +2049,7 @@ draw_mini();
 </script>
 <!-- Divs that show on top, must be placed after the javascript div creation calls -->
 <div id="img_full" style="position:absolute; top:10px; left:115px; border:3px solid #666699; overflow:visible; background-color:#EEEEEE; visibility:hidden; padding:10px;">&nbsp;</div>
-<div id="lua_dialog" style="position:absolute; top:15px; left:20px; padding:20px 20px 180px 20px; width:1020px; border:1px solid #666699; background-color: #EEEEEE; visibility: hidden;">
+<div id="lua_dialog" style="position:absolute; top:15px; left:10px; padding:20px 20px 180px 28px; width:1030px; border:1px solid #666699; background-color: #EEEEEE; visibility: hidden;">
       <strong>LUA INPUT/OUTPUT</strong><br>
 		This window updates automatically.<br><br>
       <strong>Saving :</strong> Copy the following LUA code and paste it in a .lua file to save your tileset.<br>
@@ -1770,17 +2068,18 @@ update_levels();
 update_grid();
 update_mini();
 update_lua();
-//Corrects a little bug with selection fields disabled property
+//Corrects a little bugs with selection fields disabled property and selected related variables.
 switch_height();
 switch_type();
 switch_expl();
+switch_img_warn();
 //-->
 </script>
 <div id="bt_help" class="button" style="top:10px; left:1000px; background-color:#CCCCFF;"><a onclick="toggle_help();return(false);"  href="#"><strong>HELP</strong></a></div>
 <div id="bt_lua_in_out" class="lua_button" style="top:10px; left:800px; background-color:#FFFFFF;"><a onclick="toggle_lua_dialog();return(false);" href="#"><strong>LUA INPUT / OUTPUT DIALOG</strong></a></div>
 <div id="h_win" style="position:absolute; top:30px; left:026px; width:1024px; height:725px; overflow:auto; padding:5px 12px 5px 12px; border:1px solid #666699; background-color:#EEEEFF; visibility:visible;">
-  <p><strong>Nachtwolf's tileset editor, version 2.0 </strong></p>
-<p><strong>HOW TO USE THIS TOOL</strong></p>
+  <p><strong>Nachtwolf's tileset editor, version 2.1</strong></p>
+  <p><strong>HOW TO USE THIS TOOL</strong></p>
 <p><strong>1. Getting started<br>
   </strong><br>
   Make sure your PNG sprite images are properly formatted, for the moment this editor supports only 32x40 sprites. Look at existing image if you don't know the sprite format to use. <br>
@@ -1847,24 +2146,35 @@ A preview of the minimap tile is also provided as it will be seen on the game's 
 In the battlescape, the tile grid would be seen from the bottom left. That means the tile grid is tilted 45 degrees clockwise to make editing easier.<br>
 <br>
 To make a tile transparency shape, select a level to edit. Then paint the tile grid. Color means the object is filled at this location. Edit all levels until you have the desired 3D shape. </p>
-<p><strong>KNOWN ISSUES </strong></p>
-<p><strong>Issue # 001</strong> : This tool is not compatible with old browsers such as Netscape 4.x. I recommend you use mozilla firefox. <br>
+<p><strong>FIXES</strong></p>
+<p><strong>Fixed in version 2.1<br>
+    </strong>- Fixed Issue # 006 : When adding a tile, it made the image path to reset to image.png. The current image path is now used instead.<br>
+    - Added a checkbox to get rid of image not found warnings which can be annoying.<br>
+    - Added JUMP TO feature to make tile navigation quicker.<br>
+    - Added 3D Shape preview.
     <br>
-    <strong>Issue # 002</strong> : You must activate javascript in order to use this tool. <br>
+    - Fixed Issue # 007 : Delete button always deleted last tile. Delete button now deletes the current tile.<br>
+  - Fixed Issue # 008 : Trailing white spaces were present at the end of loaded tiles. Changed LUA loading behavior.<br>
+  - Fixed Issue # 009 :
+Added quick Shape templates you can use as a start for modifications. </p>
+<p><strong>KNOWN ISSUES </strong></p>
+<p><strong>Issue # 001</strong> : This tool is not compatible with old browsers such as Netscape 4.x. I recommend you use mozilla firefox. (Will not fix)<br>
+    <br>
+    <strong>Issue # 002</strong> : You must activate javascript in order to use this tool. (Can't fix)<br>
   <br>
-  <strong>Issue # 003</strong> : When you have just changed the extension path or image path and you click on UPDATE IMAGE, you may get a warning that the image is not found even if the path is actually correct. Fix : Simply click again on UPDATE IMAGE, bug doesn't occur on following attempts.<br>
+  <strong>Issue # 003</strong> : When you have just changed the extension path or image path and you click on UPDATE IMAGE, you may get a warning that the image is not found even if the path is actually correct. Fix : Simply click again on UPDATE IMAGE, bug doesn't occur on following attempts. (Unknown origin) <br>
   <br>
   <strong>Issue # 004</strong> : 
-  You must copy/paste from the LUA input/output dialog to save your tileset.<br>
+  You must copy/paste from the LUA input/output dialog to save your tileset. (Can't fix) <br>
   <br>
-  <strong>Issue # 005</strong> : You might get weird results or errors if you load two different tilesets in the same session, restart the navigator to make sure.<br>
-  <br>
-  <strong>Issue # 006</strong> : Browsing through tiles is not exactly an instant process.<br>
+  <strong>Issue # 005</strong> : You might get weird results or errors if you load two different tilesets in the same session, restart the navigator to make sure. (To do : a reset function)<br>
   <br>
   If you encounter a bug, or have ideas for new features, please contact merc_graphics@hotmail.com.<br>
   <br>
   <strong>CREDITS </strong><br>
-  This javascript map tile tool for UFO2000 map making has been designed and programmed by Nachtwolf (Vincent), email: merc_graphics@hotmail.com </p>
+  This javascript map tile tool for UFO2000 map making has been designed and programmed by Nachtwolf (Vincent), email: merc_graphics@hotmail.com<br>
+  <br>
+  Many thanks to Hobbes and Sporb for suggestions and bug reports.</p>
 <p><strong><a href="#" onclick="toggle_help();">Click to close help window </a></strong></p>
 </div>
 <div id="loading" style="position:absolute; top:250px; left:80px; border:3px solid #666699; overflow:visible; background-color:#FFFFFF; visibility:hidden; padding:50px; width:800px; font-weight:bold;">
